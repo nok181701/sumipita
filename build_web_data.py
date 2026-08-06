@@ -232,6 +232,9 @@ if __name__ == "__main__":
         "g": t["scores"]["ground"] if t["flags"]["flood_covered"] else None,
         "scored": t["flags"]["scored"],
         "tide_scope": t["flags"]["tide_in_scope"],
+        # 地図のflyTo用（ポリゴン重心）
+        "lat": t["lat"],
+        "lng": t["lng"],
     } for t in towns]
     kb = write(os.path.join(DST_DIR, "index.json"), meta)
     print(f"index.json: {len(towns)}件 / スコア算出可 {out['scored_count']}件 / {kb:.0f} KB")

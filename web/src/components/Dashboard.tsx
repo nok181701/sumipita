@@ -1,9 +1,16 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import { useCallback, useEffect, useState } from "react";
 import ScoreCard from "./ScoreCard";
 import TownSearch from "./TownSearch";
 import type { IndexFile, Town } from "@/lib/types";
+
+// MapLibre は window に依存するので SSR しない
+const MapView = dynamic(() => import("./MapView"), {
+  ssr: false,
+  loading: () => <div className="h-[480px] rounded-lg border border-line bg-white shadow-sm" />,
+});
 
 /**
  * 詳細は区ごとに分割して取得する。
@@ -59,6 +66,13 @@ export default function Dashboard({ meta }: { meta: IndexFile }) {
             {meta.scored_count.toLocaleString()}件 ・ {meta.data_year}年データ
           </p>
         </header>
+
+        <MapView
+          entries={meta.index}
+          wardCodes={meta.ward_codes}
+          selectedKey={selected}
+          onSelect={load}
+        />
 
         {loading && !town && (
           <div className="rounded-lg border border-line bg-white p-8 text-center text-sm text-muted">

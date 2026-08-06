@@ -69,6 +69,9 @@ export type IndexEntry = {
   scored: boolean;
   /** 高潮浸水想定区域の対象17区か。false のとき t は null（対象外であって安全確認済みではない） */
   tide_scope: boolean;
+  /** ポリゴン重心。ポリゴン未対応の3件（江東区海の森）は null */
+  lat: number | null;
+  lng: number | null;
 };
 
 export type Source = {
@@ -85,6 +88,8 @@ export type IndexFile = {
   town_count: number;
   scored_count: number;
   wards: string[];
+  /** 区名 → 区コード。GeoJSONのファイル名が区コードなので必要 */
+  ward_codes: Record<string, string>;
   sources: Source[];
   index: IndexEntry[];
 };
