@@ -12,10 +12,10 @@ npm run dev
 
 ## データの再生成
 
-`sumupita_scores.csv` を更新したら、リポジトリのルートで:
+`cache/sumupita_scores.csv` を更新したら、リポジトリのルートで:
 
 ```bash
-python3 build_web_data.py
+python3 etl/build_web_data.py
 ```
 
 `web/public/data/` に以下が書き出される。

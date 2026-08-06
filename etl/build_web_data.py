@@ -1,4 +1,4 @@
-"""sumupita_scores.csv → フロントエンド用 JSON
+"""cache/sumupita_scores.csv → フロントエンド用 JSON
 
 D1 に載せ替えるまでの繋ぎ。schema.sql のテーブル分割
 （towns / town_scores / crime_counts / hazard_details）と同じ考え方で、
@@ -13,7 +13,7 @@ import unicodedata
 
 import pandas as pd
 
-SRC = "sumupita_scores.csv"
+SRC = "cache/sumupita_scores.csv"
 # 緯度経度は export_d1.py の成果物から取る（ポリゴンの重心）。
 # 無ければ地図なしで動くので必須にはしない。
 TOWNS_CSV = "dist/towns.csv"

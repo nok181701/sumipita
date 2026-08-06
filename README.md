@@ -9,15 +9,20 @@ UIを触る前にそちらの「設計上の約束ごと」を読むこと。
 ## 構成
 
 ```
-paths.py              生データの配置場所（環境変数 SUMIPITA_DATA で上書き可）
-score_proto.py        犯罪/人口の正規化・突合 → 治安スコア
-polygon_join.py       町丁目ポリゴンの読み込みと人口データへの結合
-tokyo_flood.py        東京都「浸水予想区域図」の集計（洪水の主軸）
-takashio.py           東京都港湾局「高潮浸水想定区域図」の集計
-flood_join.py         国土数値情報の空間結合（家屋倒壊等氾濫想定区域の補完用）※未回収
-combine_scores.py     4軸を統合 → sumupita_scores.csv
-export_d1.py          D1投入用CSV + R2用GeoJSON を dist/ に書き出す
-build_web_data.py     sumupita_scores.csv → web/public/data/*.json
+etl/
+  paths.py              生データの配置場所（環境変数 SUMIPITA_DATA で上書き可）
+  score_proto.py        犯罪/人口の正規化・突合 → 治安スコア
+  polygon_join.py       町丁目ポリゴンの読み込みと人口データへの結合
+  tokyo_flood.py        東京都「浸水予想区域図」の集計（洪水の主軸）
+  takashio.py           東京都港湾局「高潮浸水想定区域図」の集計
+  flood_join.py         国土数値情報の空間結合（家屋倒壊等氾濫想定区域の補完用）※未回収
+  combine_scores.py     4軸を統合 → cache/sumupita_scores.csv
+  export_d1.py          D1投入用CSV + R2用GeoJSON を dist/ に書き出す
+  build_web_data.py     cache/sumupita_scores.csv → web/public/data/*.json
+cache/                ETL中間・最終成果物（再計算コストが高いためコミットして共有）
+  sumupita_scores.csv   4軸スコア算出結果。export_d1.py / build_web_data.py の入力
+  tokyo_flood_stats.csv 洪水集計の分析用ダンプ（tokyo_flood.py 単体実行時のみ出力）
+  takashio_stats.csv    高潮集計の分析用ダンプ（takashio.py 単体実行時のみ出力）
 schema.sql            Cloudflare D1 のスキーマ定義
 web/                  Next.js フロントエンド（README は web/README.md）
 ```
@@ -57,24 +62,24 @@ export SUMIPITA_TAKASHIO="$HOME/Downloads/shape(depth)"
 ## 実行
 
 ```bash
-# 1) スコア算出 → sumupita_scores.csv        （約27秒）
-python3 combine_scores.py
+# 1) スコア算出 → cache/sumupita_scores.csv   （約27秒）
+python3 etl/combine_scores.py
 
 # 2) D1投入用CSV + R2用GeoJSON → dist/       （約4秒。既存スコアを再利用）
-python3 export_d1.py
-python3 export_d1.py --rebuild               # スコアから作り直す場合
+python3 etl/export_d1.py
+python3 etl/export_d1.py --rebuild           # スコアから作り直す場合
 
 # 3) フロント用JSON → web/public/data/
-python3 build_web_data.py
+python3 etl/build_web_data.py
 
 # 4) フロントを起動
 cd web && npm install && npm run dev
 ```
 
-`sumupita_scores.csv` は算出済みのものがコミットされているので、
+`cache/sumupita_scores.csv` は算出済みのものがコミットされているので、
 フロントだけ触るなら 3) と 4) だけで動く。
 
-`export_d1.py` は既定で `sumupita_scores.csv` を再利用する。
+`export_d1.py` は既定で `cache/sumupita_scores.csv` を再利用する。
 生データやスコア定義を変えたときだけ `--rebuild` を付けること
 （GitHub Actions では毎回 `--rebuild`）。
 
@@ -94,7 +99,7 @@ cd web && npm install && npm run dev
 ## 現状
 
 - 4軸スコア: 3,142町丁目中2,994件で算出済み
-- ETLパイプライン: 生データから通しで再現可能（既存 `sumupita_scores.csv` とバイナリ一致を確認済み）
+- ETLパイプライン: 生データから通しで再現可能（既存 `cache/sumupita_scores.csv` とバイナリ一致を確認済み）
 - スコアカードUI: 実装済み
 - 地図: 実装済み（MapLibre GL JS + 地理院タイル。軸タブで塗り分けを切り替え）
 - D1 + Workers API: 未実装

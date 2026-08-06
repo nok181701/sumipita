@@ -80,4 +80,4 @@ if __name__ == '__main__':
     w = r[hit].groupby('ward').agg(n=('key', 'size'), expo=('ts_exposure', 'mean'),
                                    pop=('pop', 'sum')).sort_values('expo', ascending=False)
     print(w.to_string(float_format=lambda x: f'{x:.2f}'))
-    r.to_csv('takashio_stats.csv', index=False)
+    r.to_csv('cache/takashio_stats.csv', index=False)

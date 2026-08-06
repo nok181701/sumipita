@@ -105,4 +105,4 @@ if __name__ == '__main__':
     print('=== 区別 平均浸水深 ===')
     print(r[cov].groupby('ward')['tk_mean_depth'].mean().sort_values(ascending=False)
           .to_string(float_format=lambda x: f'{x:.2f}'))
-    r.to_csv('tokyo_flood_stats.csv', index=False)
+    r.to_csv('cache/tokyo_flood_stats.csv', index=False)

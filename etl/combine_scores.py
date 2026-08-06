@@ -93,4 +93,4 @@ if __name__ == '__main__':
              & (m['tide_score'] >= 70) & (m['ground_score'] >= 70)]
     print(f'{len(good)}件 / 人口 {int(good["pop"].sum()):,}人')
     print(good.groupby('ward').size().sort_values(ascending=False).to_string())
-    m.to_csv('sumupita_scores.csv', index=False)
+    m.to_csv('cache/sumupita_scores.csv', index=False)
