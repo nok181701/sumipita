@@ -1,0 +1,90 @@
+export type Axis = "safety" | "flood" | "tide" | "ground";
+
+export type Scores = Record<Axis, number | null>;
+
+export type Flags = {
+  /** 人口100人未満はスコア算出対象外 */
+  scored: boolean;
+  /** 浸水予想区域図の流域データの範囲内か */
+  flood_covered: boolean;
+  /** 高潮浸水想定区域の対象17区に含まれるか */
+  tide_in_scope: boolean;
+  /** ゼロメートル地帯 */
+  below_sea: boolean;
+  /** 業務地区（夜間人口が分母のため治安スコアが不当に低く出る） */
+  business_area: boolean;
+};
+
+export type Crime = {
+  serious_2y: number | null;
+  serious_r7: number | null;
+  daily_r7: number | null;
+  total_r7: number | null;
+  robbery: number | null;
+  assault: number | null;
+  injury: number | null;
+  burglary_akisu: number | null;
+  burglary_shinobi: number | null;
+  burglary_izora: number | null;
+  bicycle_theft: number | null;
+  vehicle_theft: number | null;
+  snatch: number | null;
+  pickpocket: number | null;
+};
+
+export type Hazard = {
+  flood_ratio: number | null;
+  flood_mean_depth: number | null;
+  flood_max_depth: number | null;
+  flood_exposure: number | null;
+  tide_ratio: number | null;
+  tide_mean_depth: number | null;
+  tide_max_depth: number | null;
+  tide_exposure: number | null;
+  mean_elev: number | null;
+  min_elev: number | null;
+};
+
+export type Town = {
+  key: string;
+  ward: string;
+  town: string;
+  pop: number | null;
+  households: number | null;
+  scores: Scores;
+  flags: Flags;
+  crime: Crime;
+  hazard: Hazard;
+};
+
+export type IndexEntry = {
+  key: string;
+  ward: string;
+  town: string;
+  pop: number | null;
+  s: number | null;
+  f: number | null;
+  t: number | null;
+  g: number | null;
+  scored: boolean;
+  /** 高潮浸水想定区域の対象17区か。false のとき t は null（対象外であって安全確認済みではない） */
+  tide_scope: boolean;
+};
+
+export type Source = {
+  id: string;
+  name: string;
+  url: string;
+  license: string;
+};
+
+export type IndexFile = {
+  data_year: number;
+  min_pop: number;
+  tide_out_of_scope: string[];
+  town_count: number;
+  scored_count: number;
+  wards: string[];
+  sources: Source[];
+  index: IndexEntry[];
+};

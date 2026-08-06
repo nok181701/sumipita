@@ -1,0 +1,9 @@
+# 生データは再配布不可。各自ダウンロードすること（README.md 参照）
+data/
+
+# ETL成果物（D1/R2にpushするもの）
+dist/
+
+__pycache__/
+*.pyc
+.DS_Store
