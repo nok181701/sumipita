@@ -30,9 +30,38 @@ web/                  Next.js フロントエンド（README は web/README.md�
 
 ## セットアップ
 
+Python 3.10以上が必要。**仮想環境を作って入れること。**
+
 ```bash
-pip install -r requirements.txt
+python3 -m venv .venv
+source .venv/bin/activate
+python3 -m pip install -r requirements.txt
 ```
+
+以降このリポジトリで作業するときは、毎回 `source .venv/bin/activate` してから実行する。
+プロンプトの先頭に `(.venv)` が付いていれば有効になっている。抜けるときは `deactivate`。
+
+<details>
+<summary>うまくいかないとき</summary>
+
+**`pip: command not found`**
+macOSに `pip` という名前のコマンドは無い。`python3 -m pip` を使う。
+`pip3` でも動くが、複数のPythonが入っていると別の環境に入ってしまうことがあるので
+`python3 -m pip` のほうが確実。
+
+**`error: externally-managed-environment`**
+Homebrewやシステムのpythonは、壊れるのを防ぐために直接インストールできないようになっている。
+上の手順どおり仮想環境を作れば出なくなる。
+`--break-system-packages` で無理に入れることもできるが、システム側を壊す可能性があるので勧めない。
+
+**`python3: command not found`**
+Pythonが入っていない。`brew install python@3.12` か
+[python.org](https://www.python.org/downloads/) から入れる。
+
+**geopandasのインストールで失敗する**
+`python3 -m pip install --upgrade pip` でpipを新しくしてから再実行する。
+古いpipだとビルド済みのwheelを取りに行かず、ソースからのビルドに失敗することがある。
+</details>
 
 ### 生データを `data/` に置く
 

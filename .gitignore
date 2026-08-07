@@ -4,6 +4,10 @@ data/
 # ETL成果物（D1/R2にpushするもの）
 dist/
 
+# Python仮想環境
+.venv/
+venv/
+
 __pycache__/
 *.pyc
 .DS_Store

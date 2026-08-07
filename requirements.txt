@@ -3,3 +3,10 @@ numpy>=1.26
 geopandas>=1.0
 shapely>=2.0
 pyogrio>=0.9
+
+# ksj_flood.py が途中結果を parquet でキャッシュするのに使う。
+# 荒川は読み込みと修復だけで30秒かかるので、キャッシュしないと毎回待つことになる。
+pyarrow>=15.0
+
+# make_og_image.py（OGP画像の生成）で使う。ETL本体には不要。
+Pillow>=10.0
