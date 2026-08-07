@@ -18,7 +18,7 @@
     {
       "binding": "DB",
       "database_name": "sumipita",
-      "database_id": "PLACEHOLDER_DATABASE_ID",
+      "database_id": "befcf837-692e-4622-8d51-eb1a8a91ff69",
       // スキーマは migrations/ で管理する。適用済みかどうかは
       // D1側の d1_migrations テーブルが覚えているので、何度流しても安全。
       "migrations_dir": "migrations"

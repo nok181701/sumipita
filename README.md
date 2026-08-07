@@ -20,7 +20,7 @@ etl/
   flood_join.py         国土数値情報の空間結合（家屋倒壊等氾濫想定区域の補完用）※未回収
   combine_scores.py     4軸を統合 → cache/sumupita_scores.csv
   export_d1.py          D1投入用CSV + R2用GeoJSON を dist/ に書き出す
-  make_schema.py        dist/*.csv → web/migrations/0001_init.sql と dist/seed.sql
+  make_schema.py        dist/*.csv → web/migrations/0001_init.sql と web/seed/data.sql
   build_web_data.py     dist/geojson → web/public/data/geojson（地図のポリゴン）
 cache/                ETL中間・最終成果物（再計算コストが高いためコミットして共有）
   sumupita_scores.csv   4軸スコア算出結果。export_d1.py / build_web_data.py の入力
@@ -151,7 +151,7 @@ python3 etl/build_web_data.py
 cd web
 npm install
 npx wrangler d1 migrations apply sumipita --local
-npx wrangler d1 execute sumipita --local --file=../dist/seed.sql
+npx wrangler d1 execute sumipita --local --file=seed/data.sql
 npm run dev
 ```
 
@@ -167,7 +167,7 @@ ETLにカラムを足すたびに書き忘れて実態とズレていた。
 | | 置き場所 | 適用方法 |
 |---|---|---|
 | スキーマ | `web/migrations/` | `wrangler d1 migrations apply`（デプロイ時に自動） |
-| データ 3,142行 | `dist/seed.sql` | `wrangler d1 execute`（手動） |
+| データ 3,142行 | `web/seed/data.sql` | `wrangler d1 execute`（手動） |
 
 スキーマは滅多に変わらないので履歴として管理する意味がある。
 適用済みかどうかはD1側の `d1_migrations` テーブルが覚えているので、何度流しても安全。
@@ -185,7 +185,7 @@ python3 etl/export_d1.py --rebuild
 python3 etl/make_schema.py
 cd web
 npx wrangler d1 migrations apply sumipita --remote   # スキーマが変わった場合のみ
-npx wrangler d1 execute sumipita --remote --file=../dist/seed.sql
+npx wrangler d1 execute sumipita --remote --file=seed/data.sql
 ```
 
 ### 出力
@@ -234,7 +234,7 @@ npx wrangler d1 create sumipita
 
 ```bash
 npx wrangler d1 migrations apply sumipita --remote
-npx wrangler d1 execute sumipita --remote --file=../dist/seed.sql
+npx wrangler d1 execute sumipita --remote --file=seed/data.sql
 ```
 
 `--remote` を付け忘れるとローカルのD1に入るだけで本番は空のまま。
@@ -267,7 +267,7 @@ main に push すると自動でデプロイされる。
 ```bash
 python3 etl/export_d1.py --rebuild
 python3 etl/make_schema.py
-cd web && npx wrangler d1 execute sumipita --remote --file=../dist/seed.sql
+cd web && npx wrangler d1 execute sumipita --remote --file=seed/data.sql
 ```
 
 `schema.sql` の先頭に `DROP TABLE IF EXISTS` が入っているので、
