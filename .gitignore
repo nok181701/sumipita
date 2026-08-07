@@ -1,8 +1,10 @@
 # 生データは再配布不可。各自ダウンロードすること（README.md 参照）
-data/
+# 先頭のスラッシュが必須。`data/` と書くと web/public/data/ にも当たってしまい、
+# 画面が読むJSONまでgitから外れてデプロイ先が真っ白になる。
+/data/
 
 # ETL成果物（D1/R2にpushするもの）
-dist/
+/dist/
 
 # Python仮想環境
 .venv/

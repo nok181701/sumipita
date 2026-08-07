@@ -1,0 +1,29 @@
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "sumipita",
+  "compatibility_date": "2026-08-07",
+
+  // 静的書き出し（next.config.mjs の output: "export"）の成果物を配信する。
+  // いまはWorkerのコードが無い「アセットだけのWorker」。
+  //
+  // あとでAPIを足すときは、ここに main と バインディングを書き足すだけでよい。
+  // Pagesではなく Workers を選んだのはこのため（2026年3月にWorkersがPagesと
+  // 機能同等になり、Cloudflare自身が新規はWorkers推奨としている）。
+  //
+  //   "main": "./src/worker.ts",
+  //   "assets": { ..., "binding": "ASSETS", "run_worker_first": ["/api/*"] },
+  //   "d1_databases": [{ "binding": "DB", "database_name": "sumipita", "database_id": "..." }],
+  //   "r2_buckets": [{ "binding": "GEO", "bucket_name": "sumipita-geojson" }]
+  "assets": {
+    "directory": "./out",
+    // 存在しないパスは out/404.html を404で返す。
+    // SPAではないので "single-page-application" にはしないこと。
+    // それにすると /存在しないURL が200で返り、検索エンジンに大量の
+    // 「中身は同じで200のページ」を食わせてしまう。
+    "not_found_handling": "404-page"
+  },
+
+  "observability": {
+    "enabled": true
+  }
+}

@@ -167,6 +167,65 @@ cd web && npm install && npm run dev
 ポリゴンの紐付け率は99.90%（3,139/3,142）。
 未解決は江東区海の森1〜3丁目のみで、いずれも人口0なので実害はない。
 
+## デプロイ
+
+**Cloudflare Workers**（Pagesではない）。2026年3月にWorkersがPagesと機能同等になり、
+Cloudflare自身が新規プロジェクトはWorkers推奨としているため。
+あとでD1やAPIを足すとき、同じデプロイに `main` とバインディングを書き足すだけで済む。
+
+構成は `web/wrangler.jsonc`。Next.jsは `output: "export"` で静的書き出しし、
+その `web/out/` をアセットとして配信している。サーバー処理は一切ない。
+
+### 初回だけやること
+
+**1. Cloudflareで Worker を作る**
+
+```bash
+cd web
+npx wrangler login
+npm run deploy        # ビルドしてデプロイ。初回はここでWorkerが作られる
+```
+
+`https://sumipita.<アカウント名>.workers.dev` で見られるようになる。
+
+**2. GitHubに登録する**
+
+Settings → Secrets and variables → Actions
+
+| タブ | 名前 | 中身 |
+|---|---|---|
+| Secrets | `CLOUDFLARE_API_TOKEN` | Cloudflareで発行。権限は「アカウント → Workers スクリプト → 編集」 |
+| Secrets | `CLOUDFLARE_ACCOUNT_ID` | ダッシュボードのURLに出ている32桁 |
+| Variables | `NEXT_PUBLIC_SITE_URL` | 公開URL。例 `https://sumipita.xxx.workers.dev` |
+
+`NEXT_PUBLIC_SITE_URL` はビルド後のHTMLに埋まる公開情報なのでSecretにしなくてよい。
+未設定でも表示は壊れないが、canonical と sitemap.xml に仮のドメインが入る。
+
+### 以降
+
+`main` にpushすると `.github/workflows/deploy.yml` が動く。
+型チェック → ビルド → デプロイの順で、**データが欠けていたら止まる**ようにしてある
+（`web/public/data/` が無いまま公開すると、地図が真っ白なサイトができてしまうため）。
+
+**ETLはCIで動かさない。** 生データが再配布不可でリポジトリに入っていないため。
+スコアを更新するときはローカルで実行し、`web/public/data/` の結果をコミットする。
+
+### 独自ドメインに移すとき
+
+1. Cloudflareダッシュボードで Worker にカスタムドメインを追加
+2. GitHubの `NEXT_PUBLIC_SITE_URL` を新しいURLに変更
+3. Actions から手動実行（`workflow_dispatch`）して再ビルド
+
+canonical・OGP・sitemap.xml はビルド時に埋め込まれるので、**2をやらずに1だけやると
+古いURLが埋まったまま**になる。
+
+### ローカルで本番と同じ状態を見る
+
+```bash
+cd web
+npm run preview       # ビルドして wrangler dev で配信
+```
+
 ## 現状
 
 - 4軸スコア: 治安・洪水・高潮は3,142町丁目中2,994件、地盤（液状化）は2,538件で算出済み
@@ -174,7 +233,8 @@ cd web && npm install && npm run dev
 - ETLパイプライン: 生データから通しで再現可能
 - スコアカードUI: 実装済み
 - 地図: 実装済み（MapLibre GL JS + 地理院タイル。軸タブで塗り分けを切り替え）
-- D1 + Workers API: 未実装
+- デプロイ: Cloudflare Workers（静的書き出し）+ GitHub Actions
+- D1 + Workers API: 未実装（`web/wrangler.jsonc` にバインディングを足す形で拡張する）
 - `flood_join.py`（国土数値情報の空間結合。家屋倒壊等氾濫想定区域の補完用）は未回収
 
 ### SEO
@@ -215,4 +275,5 @@ NEXT_PUBLIC_SITE_URL=https://実際のドメイン
 **大量アクセスをかける場合は国土地理院への申請が必要**なので、公開前に規約を確認すること。
 
 ポリゴンは現在 `web/public/data/geojson/` から6.3MBを一括ロードしている。
-本番では R2 に置き、表示中の区だけ取得するかベクトルタイル化する。
+**公開直後はこのままで動くが、アクセスが増えたらR2配信か区ごとの遅延読み込みに移すこと。**
+出力全体は16MB・79ファイルで、Workersのアセット上限（1ファイル25MB / 2万ファイル）には余裕がある。
