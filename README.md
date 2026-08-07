@@ -252,7 +252,7 @@ Settings → Secrets and variables → Actions
 
 | 名前 | 中身 |
 |---|---|
-| `CLOUDFLARE_API_TOKEN` | 権限は Workers Scripts の Edit |
+| `CLOUDFLARE_API_TOKEN` | 権限は Workers Scripts の Edit と D1 の Edit の両方が必要（D1権限が無いとマイグレーション適用が7403で失敗する） |
 | `CLOUDFLARE_ACCOUNT_ID` | ダッシュボードのURLに出ている32桁 |
 
 ### 以降
