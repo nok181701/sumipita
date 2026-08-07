@@ -119,6 +119,97 @@ function AxisRow({ view }: { view: AxisView }) {
   );
 }
 
+function Alert({
+  tone,
+  title,
+  children,
+}: {
+  tone: "warn" | "danger";
+  title: string;
+  children: React.ReactNode;
+}) {
+  const s =
+    tone === "danger"
+      ? "border-[#f0c0c6] bg-[#fdeced] text-[#8a2f3b]"
+      : "border-[#f3d9a8] bg-[#fdf6e8] text-[#7a5518]";
+  return (
+    <div className={`mb-3 flex gap-2.5 rounded-2xl border px-3.5 py-3 text-[12px] leading-relaxed ${s}`}>
+      <span className="mt-0.5 shrink-0 text-base leading-none">⚠</span>
+      <span>
+        <strong className="font-semibold">{title}</strong>
+        <br />
+        {children}
+      </span>
+    </div>
+  );
+}
+
+/**
+ * 荒川・多摩川・江戸川の浸水想定。
+ *
+ * これらは国管理河川で東京都「浸水予想区域図」に入っていない。当初は洪水スコアから
+ * 外していたが、千代田区岩本町一丁目と中央区東日本橋3丁目が**洪水スコア100点満点なのに
+ * 荒川で1.7〜1.8mの浸水想定**という状態になっていたため、スコアに統合した。
+ *
+ * 統合後もこの内訳は出す。点数だけでは「どの川の、どれくらいの深さか」が分からず、
+ * 避難の判断につながらないため。
+ */
+function NationalRiverInfo({ town }: { town: Town }) {
+  if (!town.flags.national_river) return null;
+  const h = town.hazard;
+  const pct = (v: number | null) => (v === null ? "—" : `${(v * 100).toFixed(0)}%`);
+  const deeperThanMain =
+    h.nat_max_label && h.nat_main_label && h.nat_max_label !== h.nat_main_label;
+
+  return (
+    <Alert tone="warn" title={`${h.nat_rivers ?? "国管理河川"}があふれたときの想定区域です。`}>
+      町丁目の{pct(h.nat_ratio)}が想定区域にかかり、いちばん広い範囲で{" "}
+      <strong className="font-semibold">{h.nat_main_label ?? "—"}</strong>
+      （町丁目の{pct(h.nat_main_ratio)}）の浸水が想定されています。
+      {deeperThanMain && (
+        <>
+          {" "}
+          もっとも深いところは{h.nat_max_label}ですが、これは町丁目の
+          {pct(h.nat_max_ratio)}にあたる狭い範囲です。
+        </>
+      )}{" "}
+      この想定は上の洪水スコアに反映済みです。
+    </Alert>
+  );
+}
+
+/**
+ * 家屋倒壊等氾濫想定区域。「2階に逃げれば助かる」が通用しない区域で、
+ * 浸水深とは種類の違うリスク。スコアに混ぜると薄まるので独立して出す。
+ */
+function CollapseWarning({ town }: { town: Town }) {
+  if (!town.flags.collapse_zone) return null;
+  const { collapse_flow_ratio: flow, collapse_erosion_ratio: erosion } = town.hazard;
+  const pct = (v: number | null) => (v === null ? "—" : `${(v * 100).toFixed(0)}%`);
+  const kinds = [
+    flow && flow > 0 ? `氾濫の流れによる倒壊（町丁目の${pct(flow)}）` : null,
+    erosion && erosion > 0 ? `川岸が削られることによる流出（同${pct(erosion)}）` : null,
+  ].filter(Boolean);
+
+  return (
+    <Alert tone="danger" title="家が倒れる・流されるおそれのある区域です。">
+      {kinds.join(" と ")}が想定されています。
+      浸水の深さとは別のリスクで、
+      <strong className="font-semibold">上の階に逃げれば助かるとは限りません</strong>。
+      該当する場合は、水平避難（区域の外へ出ること）が前提になります。
+      国土交通省の指定にもとづく区域なので、避難計画は必ず自治体の資料で確認してください。{" "}
+      <a
+        href={`/criteria#${CRITERIA_ANCHOR("collapse")}`}
+        target="_blank"
+        rel="noreferrer noopener"
+        className="underline underline-offset-2"
+      >
+        なぜ点数にしていないか →
+      </a>
+    </Alert>
+  );
+}
+
 /**
  * 土地の高さ。点数ではなく事実として出す。
  *
@@ -219,17 +310,14 @@ export default function ScoreCard({ town }: { town: Town }) {
       )}
 
       {typhoon && (
-        <div className="mb-4 flex gap-2.5 rounded-2xl border border-[#f3d9a8] bg-[#fdf6e8] px-3.5 py-3 text-[12px] leading-relaxed text-[#7a5518]">
-          <span className="mt-0.5 shrink-0 text-base leading-none">⚠</span>
-          <span>
-            <strong className="font-semibold">
-              台風のときだけ弱い街です。
-            </strong>
-            ふだんの大雨には強いのに、高潮の浸水想定はかなり深刻。
-            洪水の点数だけ見て「水害には強い街」と判断すると読み違えます。
-          </span>
-        </div>
+        <Alert tone="warn" title="台風のときだけ弱い街です。">
+          ふだんの大雨には強いのに、高潮の浸水想定はかなり深刻。
+          洪水の点数だけ見て「水害には強い街」と判断すると読み違えます。
+        </Alert>
       )}
+
+      <NationalRiverInfo town={town} />
+      <CollapseWarning town={town} />
 
       <div className="space-y-2.5">
         {views.map((v) => (

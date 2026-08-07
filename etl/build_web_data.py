@@ -133,6 +133,10 @@ def build():
                 "liq_history": flag(row["liq_history"]),
                 "liq_1923": flag(row["liq_1923"]),
                 "liq_2011": flag(row["liq_2011"]),
+                # 家屋の倒壊・流出のおそれがある区域。浸水深とは別種のリスク
+                "collapse_zone": flag(row["collapse_zone"]),
+                # 荒川・多摩川・江戸川の浸水想定区域。洪水スコアに統合済み
+                "national_river": flag(row["nat_covered"]),
             },
 
             # --- 生の犯罪件数（スコアの根拠表示用）---
@@ -162,6 +166,22 @@ def build():
                 "liq_mid": num(row["liq_mid"]),
                 "liq_large": num(row["liq_large"]),
                 "liq_pl": num(row["liq_pl"], 1),
+                # 家屋倒壊等氾濫想定区域が町丁目に占める面積割合
+                "collapse_flow_ratio": num(row["collapse_flow_ratio"], 4),
+                "collapse_erosion_ratio": num(row["collapse_erosion_ratio"], 4),
+                # 荒川・多摩川・江戸川の浸水想定。
+                # main = 面積がいちばん広いランク、max = いちばん深いランク。
+                # max だけ出すと、53㎡のスリバーで「10m浸水」と読ませる事故が起きる
+                "nat_ratio": num(row["nat_ratio"], 4),
+                "nat_exposure": num(row["nat_exposure"], 3),
+                # 洪水スコアがどちらのデータで決まったか
+                "flood_source": str(row["flood_source"]),
+                "tokyo_exposure": num(row["tokyo_exposure"], 3),
+                "nat_main_label": None if pd.isna(row["nat_main_label"]) else str(row["nat_main_label"]),
+                "nat_main_ratio": num(row["nat_main_ratio"], 4),
+                "nat_max_label": None if pd.isna(row["nat_max_label"]) else str(row["nat_max_label"]),
+                "nat_max_ratio": num(row["nat_max_ratio"], 4),
+                "nat_rivers": None if pd.isna(row["nat_rivers"]) else str(row["nat_rivers"]),
             },
         })
 
@@ -205,6 +225,13 @@ def build():
                         "PL分布図・液状化履歴図",
                 "url": "https://doboku.metro.tokyo.lg.jp/start/03-jyouhou/ekijyouka/layertable.html",
                 "license": "CC BY 2.1 JP",
+            },
+            {
+                "id": "ksj_flood",
+                "name": "国土数値情報「洪水浸水想定区域データ（河川単位）」令和7年度版"
+                        "（家屋倒壊等氾濫想定区域・荒川・多摩川・江戸川）",
+                "url": "https://nlftp.mlit.go.jp/ksj/gml/datalist/KsjTmplt-A31a-2025.html",
+                "license": "CC BY 4.0",
             },
             {
                 "id": "estat_boundary",

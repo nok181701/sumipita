@@ -125,7 +125,9 @@ export function buildAxisViews(t: Town): AxisView[] {
         ? "浸水予想区域図の対象流域から外れていて、そもそもデータがありません。安全だと確認できたわけではありません。"
         : floodStatus === "not_scored"
           ? "住んでいる人が100人未満の町丁目なので、スコアは出していません。"
-          : "元データでは浸水深0.1m未満の区域に色がついていません。「0m」は浸水しない保証ではないので、そこは差し引いて見てください。",
+          : flags.national_river && hazard.flood_source === "国管理河川"
+            ? `この点数は${hazard.nat_rivers ?? "国管理河川"}の浸水想定で決まっています。東京都のデータだけで見ると${fmt(hazard.tokyo_exposure, 2, "m")}ですが、この川の想定では${fmt(hazard.nat_exposure, 2, "m")}になります。深いほうを採っています。`
+            : "元データでは浸水深0.1m未満の区域に色がついていません。「0m」は浸水しない保証ではないので、そこは差し引いて見てください。",
     evidence: [
       { label: "浸水想定区域の面積割合", value: pct(hazard.flood_ratio) },
       {
@@ -133,6 +135,12 @@ export function buildAxisViews(t: Town): AxisView[] {
         value: fmt(hazard.flood_mean_depth, 2, " m"),
       },
       { label: "最大浸水深", value: fmt(hazard.flood_max_depth, 2, " m") },
+      { label: "曝露度（東京都のデータ）", value: fmt(hazard.tokyo_exposure, 2, " m") },
+      {
+        label: "曝露度（荒川・多摩川・江戸川）",
+        value: flags.national_river ? fmt(hazard.nat_exposure, 2, " m") : "対象外",
+      },
+      { label: "点数を決めたデータ", value: hazard.flood_source },
     ],
   };
 

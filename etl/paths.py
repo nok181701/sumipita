@@ -46,6 +46,16 @@ TIDE_SHP_DIR = os.environ.get(
 LIQ_PL_SHP = os.path.join(DATA_DIR, "liquefaction", "PL分布図", "liqpt.shp")
 LIQ_HISTORY_DIR = os.path.join(DATA_DIR, "liquefaction", "液状化履歴図")
 
+# 国土数値情報 洪水浸水想定区域データ（河川単位）令和7年度版
+# 東京都管理河川ぶんは展開済みのディレクトリを、国管理河川（荒川・多摩川・江戸川）は
+# 展開後5GBになるので ZIP のまま GDAL の /vsizip/ で読む。
+KSJ_TOKYO_DIR = os.path.join(DATA_DIR, "ksj")
+KSJ_KANTO_DIR = os.path.join(DATA_DIR, "ksj_kanto")
+KSJ_KANTO_ZIP = os.environ.get(
+    "SUMIPITA_KSJ_KANTO",
+    os.path.join(DATA_DIR, "A31a-25_83_10_GEOJSON.zip"),
+)
+
 
 def require(path, what):
     """入力ファイルが無いときに、何をどこに置けばよいか分かるエラーを出す"""

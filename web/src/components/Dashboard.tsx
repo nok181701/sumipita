@@ -62,9 +62,9 @@ export default function Dashboard({ meta }: { meta: IndexFile }) {
           <span className="text-[12px] text-muted">東京23区・町丁目単位</span>
         </div>
         <p className="mt-2 max-w-2xl text-[13.5px] leading-relaxed">
-          引越し先は、住んでからでは引き返せません。
+          治安、洪水、高潮、地盤を町丁目ごとに調べました。
           <br />
-          内見のときには分からない
+          引越しなどで住居先を決める前に、ここでサクッと確認できます。
           <strong className="font-semibold">治安・洪水・高潮・地盤</strong>
           の4つを、 公的データから町丁目ごとに出しました。
           <br />

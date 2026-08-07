@@ -21,6 +21,10 @@ export type Flags = {
   liq_history: boolean;
   liq_1923: boolean;
   liq_2011: boolean;
+  /** 家屋の倒壊・流出のおそれがある区域。浸水深とは別種のリスク */
+  collapse_zone: boolean;
+  /** 荒川・多摩川・江戸川の浸水想定区域。洪水スコアに統合済み */
+  national_river: boolean;
 };
 
 export type Crime = {
@@ -58,6 +62,22 @@ export type Hazard = {
   liq_large: number | null;
   /** 平滑化後のPL代表値 */
   liq_pl: number | null;
+  /** 家屋倒壊等氾濫想定区域が町丁目に占める面積割合 */
+  collapse_flow_ratio: number | null;
+  collapse_erosion_ratio: number | null;
+  /** 荒川・多摩川・江戸川の浸水想定。main=面積最大のランク、max=最深のランク */
+  nat_ratio: number | null;
+  /** 国管理河川の曝露度（東京都データと同じ「町丁目全体で均した平均浸水深m」） */
+  nat_exposure: number | null;
+  /** 東京都データだけで見たときの曝露度 */
+  tokyo_exposure: number | null;
+  /** 洪水スコアがどちらのデータで決まったか */
+  flood_source: string;
+  nat_main_label: string | null;
+  nat_main_ratio: number | null;
+  nat_max_label: string | null;
+  nat_max_ratio: number | null;
+  nat_rivers: string | null;
 };
 
 export type Town = {

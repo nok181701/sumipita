@@ -8,7 +8,9 @@ function Block({ c }: { c: Criteria }) {
       className="scroll-mt-4 rounded-card border border-line bg-white p-5 shadow-card target:ring-2 target:ring-aqua-500"
     >
       <h3 className="text-lg font-bold tracking-tight">
-        {c.label}は、何を基準に判定しているか
+        {c.scored
+          ? `${c.label}は、何を基準に判定しているか`
+          : `${c.label}（点数にしていないリスク）`}
       </h3>
       <p className="mt-1.5 text-[13px] leading-relaxed">{c.summary}</p>
 
@@ -29,7 +31,9 @@ function Block({ c }: { c: Criteria }) {
 
       {c.counted && (
         <div className="mt-4">
-          <p className="text-[11px] font-semibold text-aqua-700">点数に数えているもの</p>
+          <p className="text-[11px] font-semibold text-aqua-700">
+            {c.scored ? "点数に数えているもの" : "対象にしているもの"}
+          </p>
           <div className="mt-1.5 space-y-2">
             {c.counted.map((g) => (
               <div key={g.label} className="rounded-2xl border border-line px-3.5 py-2.5">
@@ -59,7 +63,9 @@ function Block({ c }: { c: Criteria }) {
       )}
 
       <div className="mt-4">
-        <p className="text-[11px] font-semibold text-aqua-700">点数の出し方</p>
+        <p className="text-[11px] font-semibold text-aqua-700">
+          {c.scored ? "点数の出し方" : "どう扱っているか"}
+        </p>
         <ol className="mt-1.5 space-y-1.5">
           {c.howTo.map((h, i) => (
             <li key={i} className="flex gap-2.5 text-[12px] leading-relaxed">

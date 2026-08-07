@@ -27,6 +27,11 @@ def aggregate():
 
     acc = {}
     files = sorted(glob.glob(f'{SHP_DIR}/*.shp'))
+    if not files:
+        # 黙って0件で返すと「高潮リスクなし」として通ってしまうので必ず落とす
+        raise FileNotFoundError(
+            f'高潮のshpが1つも見つかりません: {SHP_DIR}\n'
+            f'環境変数 SUMIPITA_TAKASHIO で場所を指定できます。')
     for i, f in enumerate(files, 1):
         g = gpd.read_file(f)
         if len(g) == 0:

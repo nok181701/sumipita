@@ -335,6 +335,14 @@ export default function MapView({
             {a.label}
           </a>
         ))}
+        <a
+          href={`/criteria#${CRITERIA_ANCHOR("collapse")}`}
+          target="_blank"
+          rel="noreferrer noopener"
+          className="rounded-full border border-aqua-200 px-2.5 py-0.5 text-aqua-700 transition-colors hover:bg-aqua-100"
+        >
+          点数にしていないリスク
+        </a>
       </div>
 
       <div className="relative">

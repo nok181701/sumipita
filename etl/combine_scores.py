@@ -8,12 +8,14 @@
 標高は高潮スコアの補足情報に降格している。
 """
 import pandas as pd
+import numpy as np
 import sys
 sys.path.insert(0, '.')
 from score_proto import build as build_safety
 from tokyo_flood import aggregate as tokyo_flood
 from takashio import aggregate as takashio_flood
 from liquefaction import aggregate as liquefaction
+from ksj_flood import aggregate as ksj_flood
 
 MIN_POP = 100
 
@@ -32,6 +34,7 @@ def build():
     flood = tokyo_flood()
     tide = takashio_flood()
     liq = liquefaction()
+    ksj = ksj_flood()
 
     m = safety.merge(
         flood[['key', 'tk_coverage', 'tk_flood_ratio', 'tk_mean_depth', 'tk_max_depth',
@@ -41,6 +44,7 @@ def build():
         tide[['key', 'ts_flood_ratio', 'ts_mean_depth', 'ts_max_depth', 'ts_exposure']],
         on='key', how='left')
     m = m.merge(liq, on='key', how='left')
+    m = m.merge(ksj, on='key', how='left')
 
     pop_ok = m['pop'] >= MIN_POP
     flood_valid = pop_ok & m['tk_coverage'].fillna(False)
@@ -48,7 +52,18 @@ def build():
     # --- 1. 治安スコア（score_proto で算出済み: safety_score）---
 
     # --- 2. 洪水スコア: 町丁目全体で均した平均浸水深(m) ---
-    m['flood_exposure'] = (m['tk_flood_ratio'] * m['tk_mean_depth']).fillna(0)
+    # 東京都「浸水予想区域図」（実数値m・外水+内水）が主軸。
+    m['tokyo_exposure'] = (m['tk_flood_ratio'] * m['tk_mean_depth']).fillna(0)
+
+    # 荒川・多摩川・江戸川は国管理河川で東京都データに入っていない。
+    # 当初これをスコアから外していたが、**千代田区岩本町一丁目と中央区東日本橋3丁目が
+    # 洪水スコア100点満点なのに荒川で1.7〜1.8mの浸水想定**という状態になっていた。
+    # 国のランク値を代表値(m)に置き換えれば東京都データと同じ単位になるので統合する。
+    # 足さずに大きいほうを採るのは、複数の川が同時に決壊する想定ではないため。
+    m['nat_exposure'] = m['nat_exposure'].fillna(0)
+    m['flood_exposure'] = m[['tokyo_exposure', 'nat_exposure']].max(axis=1)
+    m['flood_source'] = np.where(
+        m['nat_exposure'] > m['tokyo_exposure'], '国管理河川', '東京都')
     m['flood_score'] = pct_score(m['flood_exposure'], flood_valid)
 
     # --- 3. 高潮スコア: 同じ定義（面積割合 × 浸水域内の平均深さ）---
@@ -68,6 +83,19 @@ def build():
     # 参考値として順位も持っておく（UIには出さない）。
     m['elev_score'] = m['tk_mean_elev'].where(flood_valid).rank(method='min', pct=True) * 100
     m['below_sea_flag'] = m['tk_below_sea'].fillna(False)
+
+    # --- 洪水スコアに含まれていないリスク（独立表示）---
+    # どちらもスコアには混ぜない。混ぜると意味が壊れるか、警告が薄まる。
+    #
+    # 1. 家屋倒壊等氾濫想定区域: 家が流される・倒壊するおそれのある区域。
+    #    「2階に逃げれば助かる」が通用しない、浸水深とは種類の違うリスク。
+    # 2. 荒川・多摩川・江戸川: 国管理河川なので東京都「浸水予想区域図」に入っておらず、
+    #    **洪水スコアの計算に一切含まれていない**。荒川沿いで洪水スコアが良好に見える
+    #    町丁目が実在するので、スコアと並べて必ず注記を出すこと。
+    for c in ['collapse_zone', 'nat_covered']:
+        m[c] = m[c].fillna(False).astype(bool)
+    for c in ['collapse_flow_ratio', 'collapse_erosion_ratio', 'collapse_ratio']:
+        m[c] = m[c].fillna(0.0)
 
     # --- 業務地区フラグ（注記表示用・暫定）---
     # 犯罪の分母は夜間人口だが、業務地区では昼間人口が桁違いに多く、
@@ -118,6 +146,19 @@ if __name__ == '__main__':
     print(g.nlargest(8, 'diff')[
         ['ward', 'town', 'pop', 'flood_score', 'tide_score', 'tide_exposure', 'diff']
     ].to_string(index=False, float_format=lambda x: f'{x:.1f}'))
+    print()
+    print('=== 洪水スコアに含まれていないリスク ===')
+    cz = m[m['collapse_zone']]
+    print(f'家屋倒壊等氾濫想定区域: {len(cz)}件 / 人口 {int(cz["pop"].sum()):,}人')
+    nt = m[m['nat_covered']]
+    print(f'荒川・多摩川・江戸川の浸水想定: {len(nt)}件 / 人口 {int(nt["pop"].sum()):,}人')
+    lead = m[ok & (m['flood_source'] == '国管理河川')]
+    print(f'洪水スコアが国管理河川で決まった町丁目: {len(lead)}件 '
+          f'/ 人口 {int(lead["pop"].sum()):,}人')
+    print('（統合しなければ実態より高い点数のままだった町丁目）')
+    print(lead.nlargest(6, 'nat_exposure')[
+        ['ward', 'town', 'pop', 'flood_score', 'tokyo_exposure', 'nat_exposure', 'nat_rivers']
+    ].to_string(index=False, float_format=lambda x: f'{x:.2f}'))
     print()
     print('=== 4軸すべて良好（治安70+ / 洪水70+ / 高潮70+ / 地盤70+）===')
     good = m[ok & (m['safety_score'] >= 70) & (m['flood_score'] >= 70)

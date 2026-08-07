@@ -29,6 +29,9 @@ def aggregate():
 
     acc = {}   # key -> dict of accumulators
     files = sorted(glob.glob(f'{CSV_DIR}/shinsui_*.csv'))
+    if not files:
+        raise FileNotFoundError(
+            f'浸水予想区域図のCSVが1つも見つかりません: {CSV_DIR}/shinsui_*.csv')
     for f in files:
         name = f.split('/')[-1]
         total = 0
