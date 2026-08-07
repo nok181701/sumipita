@@ -1,0 +1,24 @@
+name: Load D1 Data
+
+# スコアを再計算して web/seed/data.sql をコミットした後、手動で実行する。
+# push トリガーにしていないのは、データ投入がDBを一時的に使用不可にするうえ
+# 頻度も低い(スコア再計算時のみ)ため。詳細はREADMEの「データを更新する」参照。
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  load-data:
+    runs-on: ubuntu-latest
+    name: Load D1 Data
+    steps:
+      - uses: actions/checkout@v6
+      - name: Load seed data into D1
+        uses: cloudflare/wrangler-action@v4
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          workingDirectory: web
+          command: d1 execute sumipita --remote --file=seed/data.sql

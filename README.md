@@ -183,10 +183,16 @@ ETLにカラムを足すたびに書き忘れて実態とズレていた。
 ```bash
 python3 etl/export_d1.py --rebuild
 python3 etl/make_schema.py
-cd web
-npx wrangler d1 migrations apply sumipita --remote   # スキーマが変わった場合のみ
-npx wrangler d1 execute sumipita --remote --file=seed/data.sql
+git add web/migrations web/seed/data.sql
+git commit -m "データ更新"
+git push
 ```
+
+pushすると、スキーマ（`web/migrations/`）は`deploy.yml`が自動で適用する。
+データ（`web/seed/data.sql`）は自動投入しない（毎push流すとデプロイが遅くなり、
+投入中はDBが一時応答不能になるため）。GitHubの **Actions → Load D1 Data →
+Run workflow** から手動で実行すること。個人PCから`wrangler d1 execute`を
+直接叩く必要はない。
 
 ### 出力
 
