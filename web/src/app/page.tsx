@@ -1,10 +1,10 @@
-import fs from "node:fs/promises";
-import path from "node:path";
 import Dashboard from "@/components/Dashboard";
-import type { IndexFile } from "@/lib/types";
+import { loadIndex } from "@/lib/db";
+
+// D1を毎リクエスト引くので静的化しない
+export const dynamic = "force-dynamic";
 
 export default async function Page() {
-  const file = path.join(process.cwd(), "public", "data", "index.json");
-  const meta = JSON.parse(await fs.readFile(file, "utf-8")) as IndexFile;
+  const meta = await loadIndex();
   return <Dashboard meta={meta} />;
 }

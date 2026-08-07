@@ -90,8 +90,18 @@ def export(rebuild=False):
     c['bicycle'] = m['非侵入窃盗自転車盗'].fillna(0)
     c['vehicle'] = m[['非侵入窃盗車上ねらい', '非侵入窃盗自動車盗',
                       '非侵入窃盗オートバイ盗']].sum(axis=1)
-    c['snatch'] = m[['非侵入窃盗ひったくり', '非侵入窃盗すり', '非侵入窃盗置引き']].sum(axis=1)
+    c['snatch'] = m['非侵入窃盗ひったくり'].fillna(0)
+    c['pickpocket'] = m['非侵入窃盗すり'].fillna(0)
     c['total'] = m['総合計'].fillna(0)
+    # 画面のスコア根拠表示で使う内訳。合算値だけだと「うち強盗◯件」が出せない。
+    c['serious_2y'] = m['serious'].fillna(0)      # 重大犯罪 R6+R7
+    c['serious_r7'] = m['serious_r7'].fillna(0)
+    c['daily_r7'] = m['daily'].fillna(0)
+    c['assault'] = m['粗暴犯暴行'].fillna(0)
+    c['injury'] = m['粗暴犯傷害'].fillna(0)
+    c['burglary_akisu'] = m['侵入窃盗空き巣'].fillna(0)
+    c['burglary_shinobi'] = m['侵入窃盗忍込み'].fillna(0)
+    c['burglary_izora'] = m['侵入窃盗居空き'].fillna(0)
     for col in c.columns[2:]:
         c[col] = c[col].astype(int)
     c.to_csv(f'{OUT}/crime_counts.csv', index=False)
@@ -121,6 +131,24 @@ def export(rebuild=False):
     h['liq_history'] = m['liq_history'].fillna(False).astype(int)
     h['liq_1923'] = m['liq_1923'].fillna(False).astype(int)
     h['liq_2011'] = m['liq_2011'].fillna(False).astype(int)
+    # 家屋倒壊等氾濫想定区域。浸水深とは別種のリスクでスコアに混ぜていないため、
+    # 画面では独立した警告として出す。面積割合をそのまま持つ。
+    h['collapse_zone'] = m['collapse_zone'].fillna(False).astype(int)
+    h['collapse_flow_ratio'] = m['collapse_flow_ratio'].fillna(0)
+    h['collapse_erosion_ratio'] = m['collapse_erosion_ratio'].fillna(0)
+    # 荒川・多摩川・江戸川。洪水スコアには統合済みだが、
+    # 「どの川で、どれくらいの深さか」は点数だけでは分からないので内訳を残す。
+    h['national_river'] = m['nat_covered'].fillna(False).astype(int)
+    h['nat_rivers'] = m['nat_rivers']
+    h['nat_ratio'] = m['nat_ratio']
+    h['nat_exposure'] = m['nat_exposure'].fillna(0)
+    h['nat_main_label'] = m['nat_main_label']
+    h['nat_main_ratio'] = m['nat_main_ratio']
+    h['nat_max_label'] = m['nat_max_label']
+    h['nat_max_ratio'] = m['nat_max_ratio']
+    # 洪水スコアが東京都と国のどちらのデータで決まったか
+    h['flood_source'] = m['flood_source']
+    h['tokyo_exposure'] = m['tokyo_exposure']
     h.to_csv(f'{OUT}/hazard_details.csv', index=False)
 
     # --- R2用 GeoJSON（区ごとに分割。フロントは表示中の区だけ取得する）---

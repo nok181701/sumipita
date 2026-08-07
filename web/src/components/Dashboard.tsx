@@ -22,24 +22,28 @@ const MapView = dynamic(() => import("./MapView"), {
 export default function Dashboard({ meta }: { meta: IndexFile }) {
   const [selected, setSelected] = useState<string | null>(null);
   const [town, setTown] = useState<Town | null>(null);
-  const [cache] = useState(() => new Map<string, Town[]>());
+  const [cache] = useState(() => new Map<string, Town>());
   const [loading, setLoading] = useState(false);
 
+  // 詳細はD1から1件ずつ取る。区ごとのJSONを丸ごと落とす必要がなくなった。
   const load = useCallback(
     async (key: string) => {
-      const ward = key.split("|")[0];
       setSelected(key);
+      const hit = cache.get(key);
+      if (hit) {
+        setTown(hit);
+        return;
+      }
       setLoading(true);
       try {
-        let rows = cache.get(ward);
-        if (!rows) {
-          const res = await fetch(
-            `/data/wards/${encodeURIComponent(ward)}.json`,
-          );
-          rows = ((await res.json()) as { towns: Town[] }).towns;
-          cache.set(ward, rows);
+        const res = await fetch(`/api/town?key=${encodeURIComponent(key)}`);
+        if (!res.ok) {
+          setTown(null);
+          return;
         }
-        setTown(rows.find((t) => t.key === key) ?? null);
+        const t = (await res.json()) as Town;
+        cache.set(key, t);
+        setTown(t);
       } finally {
         setLoading(false);
       }

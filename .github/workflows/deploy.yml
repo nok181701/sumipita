@@ -21,14 +21,9 @@ jobs:
       - uses: actions/setup-node@v6
         with:
           node-version: 22
-      - name: Check data
-        # web/public/data/ が欠けたままビルドしても、エラーは出ずに
-        # 地図が真っ白のサイトが公開されてしまう
-        run: |
-          set -e
-          test -f public/data/index.json
-          test "$(ls public/data/wards/*.json | wc -l)" -eq 23
-          test "$(ls public/data/geojson/*.geojson | wc -l)" -eq 24
+      - name: Check assets
+        # ポリゴンが欠けたままビルドしても、エラーは出ずに地図が真っ白のサイトが公開される
+        run: test "$(ls public/data/geojson/*.geojson | wc -l)" -eq 24
       - name: Install dependencies
         run: npm ci
       - name: Typecheck

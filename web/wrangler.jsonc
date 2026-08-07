@@ -9,5 +9,14 @@
   "assets": {
     "directory": ".open-next/assets",
     "binding": "ASSETS"
-  }
+  },
+  // スコア・犯罪件数・ハザード値を入れる。
+  // 町丁目ポリゴン（6.4MB）はここではなく静的アセットから配信する。
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "sumipita",
+      "database_id": "PLACEHOLDER_DATABASE_ID"
+    }
+  ]
 }

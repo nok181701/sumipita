@@ -20,12 +20,12 @@ etl/
   flood_join.py         国土数値情報の空間結合（家屋倒壊等氾濫想定区域の補完用）※未回収
   combine_scores.py     4軸を統合 → cache/sumupita_scores.csv
   export_d1.py          D1投入用CSV + R2用GeoJSON を dist/ に書き出す
-  build_web_data.py     cache/sumupita_scores.csv → web/public/data/*.json
+  make_schema.py        dist/*.csv → D1のスキーマとINSERT文（dist/schema.sql, seed.sql）
+  build_web_data.py     dist/geojson → web/public/data/geojson（地図のポリゴン）
 cache/                ETL中間・最終成果物（再計算コストが高いためコミットして共有）
   sumupita_scores.csv   4軸スコア算出結果。export_d1.py / build_web_data.py の入力
   tokyo_flood_stats.csv 洪水集計の分析用ダンプ（tokyo_flood.py 単体実行時のみ出力）
   takashio_stats.csv    高潮集計の分析用ダンプ（takashio.py 単体実行時のみ出力）
-schema.sql            Cloudflare D1 のスキーマ定義
 web/                  Next.js フロントエンド（README は web/README.md）
 ```
 
@@ -134,26 +134,36 @@ export SUMIPITA_TAKASHIO="$HOME/Downloads/shape(depth)"
 ## 実行
 
 ```bash
-# 1) スコア算出 → cache/sumupita_scores.csv   （約27秒）
+# 1) スコア算出 → cache/sumupita_scores.csv   （約30秒）
 python3 etl/combine_scores.py
 
-# 2) D1投入用CSV + R2用GeoJSON → dist/       （約4秒。既存スコアを再利用）
+# 2) D1投入用CSV + 地図用GeoJSON → dist/      （約5秒。既存スコアを再利用）
 python3 etl/export_d1.py
 python3 etl/export_d1.py --rebuild           # スコアから作り直す場合
 
-# 3) フロント用JSON → web/public/data/
+# 3) D1のスキーマとINSERT文を生成 → dist/schema.sql, dist/seed.sql
+python3 etl/make_schema.py
+
+# 4) 地図のポリゴンを配置 → web/public/data/geojson/
 python3 etl/build_web_data.py
 
-# 4) フロントを起動
-cd web && npm install && npm run dev
+# 5) D1に投入（ローカル）
+cd web
+npx wrangler d1 execute sumipita --local --file=../dist/schema.sql
+npx wrangler d1 execute sumipita --local --file=../dist/seed.sql
+
+# 6) 起動
+npm run dev
 ```
 
 `cache/sumupita_scores.csv` は算出済みのものがコミットされているので、
-フロントだけ触るなら 3) と 4) だけで動く。
+画面だけ触るなら 2) 以降でよい。
 
 `export_d1.py` は既定で `cache/sumupita_scores.csv` を再利用する。
-生データやスコア定義を変えたときだけ `--rebuild` を付けること
-（GitHub Actions では毎回 `--rebuild`）。
+生データやスコア定義を変えたときだけ `--rebuild` を付けること。
+
+**`dist/schema.sql` は手で書かない。** `make_schema.py` が `dist/*.csv` から生成する。
+以前は手書きしていて、ETLにカラムを足すたびに書き忘れて実態とズレていた。
 
 ### 出力
 
@@ -180,15 +190,39 @@ Next.js をそのまま Workers 上で動かす構成なので、SSR も API ル
 | `.github/workflows/deploy.yml` | main への push でデプロイ |
 | `.github/workflows/lint.yml` | push / PR で型チェック |
 
+スコア・犯罪件数・ハザード値は **D1** に入れ、毎リクエストSSRで引く。
+地図のポリゴン（6.4MB）はSQLで扱う意味がないので静的アセットのまま配る。
+
 ### 初回だけやること
+
+**1. D1を作る**
 
 ```bash
 cd web
 npx wrangler login
+npx wrangler d1 create sumipita
+```
+
+出力された `database_id` を `web/wrangler.jsonc` の `PLACEHOLDER_DATABASE_ID` と差し替える。
+
+**2. 本番のD1にデータを入れる**
+
+```bash
+npx wrangler d1 execute sumipita --remote --file=../dist/schema.sql
+npx wrangler d1 execute sumipita --remote --file=../dist/seed.sql
+```
+
+`--remote` を付け忘れるとローカルのD1に入るだけで本番は空のまま。
+
+**3. デプロイ**
+
+```bash
 npm run deploy
 ```
 
-GitHub には Settings → Secrets and variables → Actions で2つ登録する。
+**4. GitHubに登録する**
+
+Settings → Secrets and variables → Actions
 
 | 名前 | 中身 |
 |---|---|
@@ -197,11 +231,20 @@ GitHub には Settings → Secrets and variables → Actions で2つ登録する
 
 ### 以降
 
-main に push すると自動でデプロイされる。
-型チェックと、**データが欠けていたら止まるチェック**を通ってからビルドする。
+main に push すると自動でデプロイされる。型チェックと、
+**ポリゴンが欠けていたら止まるチェック**を通ってからビルドする。
 
-ETLはCIで動かさない。生データが再配布不可でリポジトリに入っていないため。
-スコアを更新するときはローカルで実行し、`web/public/data/` の結果をコミットする。
+**ETLはCIで動かさない。** 生データが再配布不可でリポジトリに入っていないため。
+スコアを更新したときは、ローカルでETLを流したあと本番D1を入れ替える。
+
+```bash
+python3 etl/export_d1.py --rebuild
+python3 etl/make_schema.py
+cd web && npx wrangler d1 execute sumipita --remote --file=../dist/seed.sql
+```
+
+`schema.sql` の先頭に `DROP TABLE IF EXISTS` が入っているので、
+スキーマから流し直せば作り直しになる。
 
 ### ローカルで本番と同じ状態を見る
 
