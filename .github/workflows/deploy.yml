@@ -1,81 +1,44 @@
 name: Deploy
 
-# ETLはここでは動かさない。生データが再配布不可でリポジトリに入れていないため。
-# スコアを更新するときはローカルで下記を実行し、成果物をコミットする。
-#   python3 etl/combine_scores.py
-#   python3 etl/export_d1.py
-#   python3 etl/build_web_data.py
-# CIがやるのは web/public/data/*.json を含めたビルドとデプロイだけ。
-
 on:
   push:
-    branches: [main]
-  # 手動実行。ドメインを変えたあとの再ビルドなどに使う
+    branches:
+      - main
   workflow_dispatch:
 
-# 同じブランチのデプロイが重なったら前のものを打ち切る
-concurrency:
-  group: deploy-${{ github.ref }}
-  cancel-in-progress: true
+permissions:
+  contents: read
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    permissions:
-      contents: read
+    name: Deploy
+    defaults:
+      run:
+        working-directory: web
     steps:
-      - uses: actions/checkout@v4
-
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
         with:
           node-version: 22
-          cache: npm
-          cache-dependency-path: web/package-lock.json
-
-      - name: 画面用データが揃っているか確認
+      - name: Check data
         # web/public/data/ が欠けたままビルドしても、エラーは出ずに
-        # 「地図が真っ白のサイト」が公開されてしまう。ここで止める。
+        # 地図が真っ白のサイトが公開されてしまう
         run: |
           set -e
-          test -f web/public/data/index.json \
-            || { echo "::error::web/public/data/index.json がありません。build_web_data.py の結果をコミットしてください"; exit 1; }
-          wards=$(ls web/public/data/wards/*.json 2>/dev/null | wc -l)
-          geo=$(ls web/public/data/geojson/*.geojson 2>/dev/null | wc -l)
-          echo "wards: ${wards} / geojson: ${geo}"
-          test "$wards" -eq 23 || { echo "::error::区ごとのJSONが23件ありません（${wards}件）"; exit 1; }
-          test "$geo" -eq 24 || { echo "::error::GeoJSONが24件ありません（${geo}件）"; exit 1; }
-
-      - run: npm ci
-        working-directory: web
-
-      - name: 型チェック
+          test -f public/data/index.json
+          test "$(ls public/data/wards/*.json | wc -l)" -eq 23
+          test "$(ls public/data/geojson/*.geojson | wc -l)" -eq 24
+      - name: Install dependencies
+        run: npm ci
+      - name: Typecheck
         run: npx tsc --noEmit
-        working-directory: web
-
-      - name: ビルド
-        working-directory: web
-        env:
-          # 未設定なら仮のドメインのまま公開される。canonical と sitemap がずれるだけで
-          # 表示は壊れないので、止めずに警告にとどめる。
-          NEXT_PUBLIC_SITE_URL: ${{ vars.NEXT_PUBLIC_SITE_URL }}
-        run: |
-          if [ -z "$NEXT_PUBLIC_SITE_URL" ]; then
-            echo "::warning::リポジトリ変数 NEXT_PUBLIC_SITE_URL が未設定です。canonical と sitemap.xml に仮のドメインが入ります。"
-          fi
-          npm run build
-
-      - name: 出力の確認
-        run: |
-          test -f web/out/index.html
-          test -f web/out/data/index.json
-          echo "出力サイズ: $(du -sh web/out | cut -f1) / ファイル数: $(find web/out -type f | wc -l)"
-
-      - name: Cloudflare Workers へデプロイ
-        uses: cloudflare/wrangler-action@v3
+      - name: Build
+        run: npx opennextjs-cloudflare build
+      - name: Deploy
+        uses: cloudflare/wrangler-action@v4
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           workingDirectory: web
-          # リポジトリに入れた wrangler を使う（CIとローカルでバージョンを揃える）
-          packageManager: npm
           command: deploy

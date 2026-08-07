@@ -16,6 +16,7 @@ etl/
   tokyo_flood.py        東京都「浸水予想区域図」の集計（洪水の主軸）
   takashio.py           東京都港湾局「高潮浸水想定区域図」の集計
   liquefaction.py       東京の液状化予測図（PL分布図・液状化履歴図）の集計
+  ksj_flood.py          国土数値情報（家屋倒壊等氾濫想定区域・荒川/多摩川/江戸川）
   flood_join.py         国土数値情報の空間結合（家屋倒壊等氾濫想定区域の補完用）※未回収
   combine_scores.py     4軸を統合 → cache/sumupita_scores.csv
   export_d1.py          D1投入用CSV + R2用GeoJSON を dist/ に書き出す
@@ -169,61 +170,44 @@ cd web && npm install && npm run dev
 
 ## デプロイ
 
-**Cloudflare Workers**（Pagesではない）。2026年3月にWorkersがPagesと機能同等になり、
-Cloudflare自身が新規プロジェクトはWorkers推奨としているため。
-あとでD1やAPIを足すとき、同じデプロイに `main` とバインディングを書き足すだけで済む。
+Cloudflare Workers に [OpenNext](https://opennext.js.org/cloudflare)（`@opennextjs/cloudflare`）で載せる。
+Next.js をそのまま Workers 上で動かす構成なので、SSR も API ルートもそのまま使える。
 
-構成は `web/wrangler.jsonc`。Next.jsは `output: "export"` で静的書き出しし、
-その `web/out/` をアセットとして配信している。サーバー処理は一切ない。
+| ファイル | 役割 |
+|---|---|
+| `web/open-next.config.ts` | Next.js を Workers 向けに変換する設定 |
+| `web/wrangler.jsonc` | Worker 名・エントリポイント・アセットの配置 |
+| `.github/workflows/deploy.yml` | main への push でデプロイ |
+| `.github/workflows/lint.yml` | push / PR で型チェック |
 
 ### 初回だけやること
-
-**1. Cloudflareで Worker を作る**
 
 ```bash
 cd web
 npx wrangler login
-npm run deploy        # ビルドしてデプロイ。初回はここでWorkerが作られる
+npm run deploy
 ```
 
-`https://sumipita.<アカウント名>.workers.dev` で見られるようになる。
+GitHub には Settings → Secrets and variables → Actions で2つ登録する。
 
-**2. GitHubに登録する**
-
-Settings → Secrets and variables → Actions
-
-| タブ | 名前 | 中身 |
-|---|---|---|
-| Secrets | `CLOUDFLARE_API_TOKEN` | Cloudflareで発行。権限は「アカウント → Workers スクリプト → 編集」 |
-| Secrets | `CLOUDFLARE_ACCOUNT_ID` | ダッシュボードのURLに出ている32桁 |
-| Variables | `NEXT_PUBLIC_SITE_URL` | 公開URL。例 `https://sumipita.xxx.workers.dev` |
-
-`NEXT_PUBLIC_SITE_URL` はビルド後のHTMLに埋まる公開情報なのでSecretにしなくてよい。
-未設定でも表示は壊れないが、canonical と sitemap.xml に仮のドメインが入る。
+| 名前 | 中身 |
+|---|---|
+| `CLOUDFLARE_API_TOKEN` | 権限は Workers Scripts の Edit |
+| `CLOUDFLARE_ACCOUNT_ID` | ダッシュボードのURLに出ている32桁 |
 
 ### 以降
 
-`main` にpushすると `.github/workflows/deploy.yml` が動く。
-型チェック → ビルド → デプロイの順で、**データが欠けていたら止まる**ようにしてある
-（`web/public/data/` が無いまま公開すると、地図が真っ白なサイトができてしまうため）。
+main に push すると自動でデプロイされる。
+型チェックと、**データが欠けていたら止まるチェック**を通ってからビルドする。
 
-**ETLはCIで動かさない。** 生データが再配布不可でリポジトリに入っていないため。
+ETLはCIで動かさない。生データが再配布不可でリポジトリに入っていないため。
 スコアを更新するときはローカルで実行し、`web/public/data/` の結果をコミットする。
-
-### 独自ドメインに移すとき
-
-1. Cloudflareダッシュボードで Worker にカスタムドメインを追加
-2. GitHubの `NEXT_PUBLIC_SITE_URL` を新しいURLに変更
-3. Actions から手動実行（`workflow_dispatch`）して再ビルド
-
-canonical・OGP・sitemap.xml はビルド時に埋め込まれるので、**2をやらずに1だけやると
-古いURLが埋まったまま**になる。
 
 ### ローカルで本番と同じ状態を見る
 
 ```bash
 cd web
-npm run preview       # ビルドして wrangler dev で配信
+npm run preview
 ```
 
 ## 現状
@@ -233,41 +217,10 @@ npm run preview       # ビルドして wrangler dev で配信
 - ETLパイプライン: 生データから通しで再現可能
 - スコアカードUI: 実装済み
 - 地図: 実装済み（MapLibre GL JS + 地理院タイル。軸タブで塗り分けを切り替え）
-- デプロイ: Cloudflare Workers（静的書き出し）+ GitHub Actions
+- デプロイ: Cloudflare Workers（OpenNext）+ GitHub Actions
 - D1 + Workers API: 未実装（`web/wrangler.jsonc` にバインディングを足す形で拡張する）
+- SEO: 未対応（title と description のみ）
 - `flood_join.py`（国土数値情報の空間結合。家屋倒壊等氾濫想定区域の補完用）は未回収
-
-### SEO
-
-設定は `web/src/lib/site.ts` に集約している。タイトル・説明文・キーワード・OG画像のパスはここだけ直せばよい。
-
-**公開前に必ずドメインを設定すること。** 未設定だと `https://sumipita.example.com` という仮の値が
-canonical・OGP・sitemap.xml すべてに入る。
-
-```bash
-# web/.env.production
-NEXT_PUBLIC_SITE_URL=https://実際のドメイン
-```
-
-| 項目 | 場所 |
-|---|---|
-| title / description / keywords / OGP / Twitter Card / robots | `src/app/layout.tsx` |
-| ページ個別の title・description | 各 `page.tsx` の `metadata` |
-| 構造化データ（WebSite / WebApplication / Dataset / FAQPage） | `src/components/StructuredData.tsx` |
-| robots.txt | `src/app/robots.ts` |
-| sitemap.xml | `src/app/sitemap.ts` |
-| OG画像 1200x630 | `python3 etl/make_og_image.py` → `web/public/og.png` |
-
-子ページで `openGraph` を書くと親の設定が丸ごと差し替わる。画像は毎回明示すること。
-`title` はテンプレート `%s | スムピタ` が効くので、ページ側にサイト名を書くと二重になる。
-
-**meta keywords はGoogleのランキングに影響しない**（2009年に公式に使用停止）。
-一部の検索エンジンや社内検索が読む程度の位置づけで置いている。順位を動かしたいなら本文を厚くするほうが確実。
-
-**現状の課題**: トップページはクローラが読める本文が1,409文字しかない。
-地図とスコアカードがクライアント描画のため、HTMLにはヘッダーとフッターの文章しか入らない。
-実質的な本文は `/criteria`（3,747文字）にある。
-効果が大きい順に、(1) 町丁目ごとの静的ページ3,142件、(2) トップに4軸の説明をサーバー側で描画。
 
 ### 地図について
 
@@ -276,4 +229,3 @@ NEXT_PUBLIC_SITE_URL=https://実際のドメイン
 
 ポリゴンは現在 `web/public/data/geojson/` から6.3MBを一括ロードしている。
 **公開直後はこのままで動くが、アクセスが増えたらR2配信か区ごとの遅延読み込みに移すこと。**
-出力全体は16MB・79ファイルで、Workersのアセット上限（1ファイル25MB / 2万ファイル）には余裕がある。
