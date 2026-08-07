@@ -20,7 +20,7 @@ etl/
   flood_join.py         国土数値情報の空間結合（家屋倒壊等氾濫想定区域の補完用）※未回収
   combine_scores.py     4軸を統合 → cache/sumupita_scores.csv
   export_d1.py          D1投入用CSV + R2用GeoJSON を dist/ に書き出す
-  make_schema.py        dist/*.csv → D1のスキーマとINSERT文（dist/schema.sql, seed.sql）
+  make_schema.py        dist/*.csv → web/migrations/0001_init.sql と dist/seed.sql
   build_web_data.py     dist/geojson → web/public/data/geojson（地図のポリゴン）
 cache/                ETL中間・最終成果物（再計算コストが高いためコミットして共有）
   sumupita_scores.csv   4軸スコア算出結果。export_d1.py / build_web_data.py の入力
@@ -141,29 +141,52 @@ python3 etl/combine_scores.py
 python3 etl/export_d1.py
 python3 etl/export_d1.py --rebuild           # スコアから作り直す場合
 
-# 3) D1のスキーマとINSERT文を生成 → dist/schema.sql, dist/seed.sql
+# 3) スキーマとデータのSQLを生成
 python3 etl/make_schema.py
 
 # 4) 地図のポリゴンを配置 → web/public/data/geojson/
 python3 etl/build_web_data.py
 
-# 5) D1に投入（ローカル）
+# 5) ローカルD1を用意して起動
 cd web
-npx wrangler d1 execute sumipita --local --file=../dist/schema.sql
+npm install
+npx wrangler d1 migrations apply sumipita --local
 npx wrangler d1 execute sumipita --local --file=../dist/seed.sql
-
-# 6) 起動
 npm run dev
 ```
 
 `cache/sumupita_scores.csv` は算出済みのものがコミットされているので、
 画面だけ触るなら 2) 以降でよい。
 
-`export_d1.py` は既定で `cache/sumupita_scores.csv` を再利用する。
-生データやスコア定義を変えたときだけ `--rebuild` を付けること。
+**スキーマは手で書かない。** `make_schema.py` が `dist/*.csv` から
+`web/migrations/0001_init.sql` を生成する。以前は手書きしていて、
+ETLにカラムを足すたびに書き忘れて実態とズレていた。
 
-**`dist/schema.sql` は手で書かない。** `make_schema.py` が `dist/*.csv` から生成する。
-以前は手書きしていて、ETLにカラムを足すたびに書き忘れて実態とズレていた。
+### スキーマとデータを分けている理由
+
+| | 置き場所 | 適用方法 |
+|---|---|---|
+| スキーマ | `web/migrations/` | `wrangler d1 migrations apply`（デプロイ時に自動） |
+| データ 3,142行 | `dist/seed.sql` | `wrangler d1 execute`（手動） |
+
+スキーマは滅多に変わらないので履歴として管理する意味がある。
+適用済みかどうかはD1側の `d1_migrations` テーブルが覚えているので、何度流しても安全。
+
+データはスコアを再計算するたびに全件入れ替わるので、マイグレーションとして
+積み上げる対象ではない。またpushのたびに2.5MBを流すとデプロイが遅くなるうえ、
+投入中はDBが一時的に応答しなくなる。
+
+### データを更新する
+
+スコアの定義や生データを変えたときだけ実行する。
+
+```bash
+python3 etl/export_d1.py --rebuild
+python3 etl/make_schema.py
+cd web
+npx wrangler d1 migrations apply sumipita --remote   # スキーマが変わった場合のみ
+npx wrangler d1 execute sumipita --remote --file=../dist/seed.sql
+```
 
 ### 出力
 
@@ -205,14 +228,17 @@ npx wrangler d1 create sumipita
 
 出力された `database_id` を `web/wrangler.jsonc` の `PLACEHOLDER_DATABASE_ID` と差し替える。
 
-**2. 本番のD1にデータを入れる**
+`database_id` を貼るまでは `Invalid uuid` で失敗する。
+
+**2. 本番のD1にスキーマとデータを入れる**
 
 ```bash
-npx wrangler d1 execute sumipita --remote --file=../dist/schema.sql
+npx wrangler d1 migrations apply sumipita --remote
 npx wrangler d1 execute sumipita --remote --file=../dist/seed.sql
 ```
 
 `--remote` を付け忘れるとローカルのD1に入るだけで本番は空のまま。
+以降スキーマの適用はデプロイ時に自動で走るので、手で実行するのは初回だけ。
 
 **3. デプロイ**
 
@@ -231,8 +257,9 @@ Settings → Secrets and variables → Actions
 
 ### 以降
 
-main に push すると自動でデプロイされる。型チェックと、
-**ポリゴンが欠けていたら止まるチェック**を通ってからビルドする。
+main に push すると自動でデプロイされる。
+型チェック → ビルド → **D1マイグレーション適用** → デプロイの順。
+ポリゴンが欠けていたら最初に止まる（地図が真っ白のサイトが公開されるのを防ぐため）。
 
 **ETLはCIで動かさない。** 生データが再配布不可でリポジトリに入っていないため。
 スコアを更新したときは、ローカルでETLを流したあと本番D1を入れ替える。

@@ -3,3 +3,5 @@ node_modules/
 out/
 .open-next/
 *.tsbuildinfo
+.wrangler/
+.dev.vars

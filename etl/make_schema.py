@@ -7,13 +7,23 @@ CSVから機械的に作れば、その事故が起きない。
     python3 etl/make_schema.py
 
 出力:
-    dist/schema.sql   テーブル定義
-    dist/seed.sql     INSERT文（D1に流し込む）
+    web/migrations/0001_init.sql  テーブル定義（wrangler d1 migrations apply で適用）
+    web/seed/data.sql             データ投入用のSQL
+
+どちらもgit管理下に置く。CIから投入するため、生成物であっても
+リポジトリに入っている必要がある（dist/ はgitignoreされている）。
+
+seed は各テーブルの INSERT 前に DELETE を入れて冪等にしてある。
+主キー重複で落ちず、途中で失敗して流し直しても同じ状態になる。
 """
 import csv
 import os
 
 DIST = "dist"
+MIGRATIONS = "web/migrations"
+SEED_DIR = "web/seed"
+SEED_FILE = f"{SEED_DIR}/data.sql"
+SCHEMA_FILE = f"{MIGRATIONS}/0001_init.sql"
 TABLES = ["towns", "town_scores", "crime_counts", "hazard_details"]
 
 # 主キー。data_year があるテーブルは年度と複合にする。
@@ -72,8 +82,13 @@ def sql_literal(v, t):
 
 def main():
     schema, seed = [], []
+    seed.append("-- dist/*.csv から自動生成。手で編集しないこと。")
+    seed.append("-- 作り直すには python3 etl/make_schema.py")
+    seed.append("-- 適用: wrangler d1 execute sumipita --remote --file=seed/data.sql")
+    seed.append("")
     schema.append("-- dist/*.csv から自動生成。手で編集しないこと。")
     schema.append("-- 作り直すには python3 etl/make_schema.py")
+    schema.append("-- 適用: wrangler d1 migrations apply sumipita --local / --remote")
     schema.append("")
 
     for name in TABLES:
@@ -89,6 +104,9 @@ def main():
         schema.append(f"CREATE TABLE {name} (\n" + ",\n".join(defs) + "\n);")
         schema.append("")
 
+        # 何度流しても同じ状態になるよう、入れ直す前に必ず消す。
+        # これが無いと2回目に主キー重複で落ちる。
+        seed.append(f"DELETE FROM {name};")
         collist = ", ".join(cols)
         # D1 は1回のexecuteに送れるサイズに上限があるので小分けにする
         for i in range(0, len(rows), 200):
@@ -105,14 +123,15 @@ def main():
     schema.append("CREATE INDEX idx_towns_ward ON towns(ward);")
     schema.append("CREATE INDEX idx_scores_year ON town_scores(data_year);")
 
-    os.makedirs(DIST, exist_ok=True)
-    with open(f"{DIST}/schema.sql", "w", encoding="utf-8") as f:
+    os.makedirs(MIGRATIONS, exist_ok=True)
+    os.makedirs(SEED_DIR, exist_ok=True)
+    with open(SCHEMA_FILE, "w", encoding="utf-8") as f:
         f.write("\n".join(schema) + "\n")
-    with open(f"{DIST}/seed.sql", "w", encoding="utf-8") as f:
+    with open(SEED_FILE, "w", encoding="utf-8") as f:
         f.write("\n".join(seed) + "\n")
 
-    for n in ["schema.sql", "seed.sql"]:
-        print(f"{DIST}/{n}: {os.path.getsize(f'{DIST}/{n}') / 1024:.0f} KB")
+    for n in [SCHEMA_FILE, SEED_FILE]:
+        print(f"{n}: {os.path.getsize(n) / 1024:.0f} KB")
 
 
 if __name__ == "__main__":

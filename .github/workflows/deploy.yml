@@ -30,6 +30,17 @@ jobs:
         run: npx tsc --noEmit
       - name: Build
         run: npx opennextjs-cloudflare build
+      - name: Apply D1 migrations
+        # 適用済みかどうかはD1側の d1_migrations テーブルが持っているので、
+        # 毎回実行しても未適用のものだけが流れる。
+        # データ（3,142行）はここでは入れない。スコアを再計算したときだけ
+        # ローカルから seed.sql を流す。詳細はREADMEの「データを更新する」参照。
+        uses: cloudflare/wrangler-action@v4
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          workingDirectory: web
+          command: d1 migrations apply sumipita --remote
       - name: Deploy
         uses: cloudflare/wrangler-action@v4
         with:

@@ -1,5 +1,5 @@
 import { getCloudflareContext } from "@opennextjs/cloudflare";
-import type { IndexEntry, IndexFile, Town } from "./types";
+import type { IndexEntry, IndexFile, Town } from "@/lib/types";
 
 const DATA_YEAR = 2025;
 const MIN_POP = 100;

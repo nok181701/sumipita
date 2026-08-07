@@ -12,11 +12,20 @@
   },
   // スコア・犯罪件数・ハザード値を入れる。
   // 町丁目ポリゴン（6.4MB）はここではなく静的アセットから配信する。
+  //
+  // database_id は `wrangler d1 create sumipita` の出力を貼ること。
   "d1_databases": [
     {
       "binding": "DB",
       "database_name": "sumipita",
-      "database_id": "PLACEHOLDER_DATABASE_ID"
+      "database_id": "PLACEHOLDER_DATABASE_ID",
+      // スキーマは migrations/ で管理する。適用済みかどうかは
+      // D1側の d1_migrations テーブルが覚えているので、何度流しても安全。
+      "migrations_dir": "migrations"
     }
-  ]
+  ],
+
+  "observability": {
+    "enabled": true
+  }
 }

@@ -1,5 +1,5 @@
 import Dashboard from "@/components/Dashboard";
-import { loadIndex } from "@/lib/db";
+import { loadIndex } from "@/server/db";
 
 // D1を毎リクエスト引くので静的化しない
 export const dynamic = "force-dynamic";

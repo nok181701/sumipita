@@ -1,4 +1,4 @@
-import { loadTown } from "@/lib/db";
+import { loadTown } from "@/server/db";
 
 export const dynamic = "force-dynamic";
 
