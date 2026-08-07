@@ -114,6 +114,8 @@ Pythonが入っていない。`brew install python@3.12` か
 | `data/shp/r2ka13.*` | e-Stat 令和2年国勢調査 町丁・字等別境界データ（東京都） | [e-Stat](https://www.e-stat.go.jp/gis/statmap-search?type=2) → 小地域 → 2020年 → 世界測地系緯度経度Shapefile → 13 東京都 |
 | `data/takashio/shape(depth)/*.shp` | 東京都港湾局 高潮浸水想定区域図［想定最大規模］（浸水深） | [東京都オープンデータ](https://catalog.data.metro.tokyo.lg.jp/dataset/t000015d1700000007)（`shape_depth_.zip`・展開後345MB） |
 | `data/liquefaction/PL分布図/`<br>`data/liquefaction/液状化履歴図/` | 東京の液状化予測図 令和7年度改訂版 の公開データ | [公開データ（地図情報等）](https://doboku.metro.tokyo.lg.jp/start/03-jyouhou/ekijyouka/layertable.html) から `PL分布図.zip` と `液状化履歴図.zip` |
+| `data/ksj/` | 国土数値情報 洪水浸水想定区域（東京都管理河川）。家屋倒壊等氾濫想定区域に使う | [国土数値情報 A31a 令和7年度版](https://nlftp.mlit.go.jp/ksj/gml/datalist/KsjTmplt-A31a-2025.html) の **GeoJSON形式** `A31a-25_13_10_GEOJSON.zip`（約12MB）と `A31a-25_13_20_GEOJSON.zip`（約20MB）を、どちらも `data/ksj/` に展開 |
+| `data/A31a-25_83_10_GEOJSON.zip` | 同（関東地方整備局）。**荒川・多摩川・江戸川** | 同ページの `A31a-25_83_10_GEOJSON.zip`（約528MB）。**展開せずzipのまま置く**（展開すると5GBになる。GDALの `/vsizip/` で直接読んでいる） |
 
 浸水予想区域図で必要な7流域:
 `shinsui_kandagawa` / `shinsui_sumidagawa` / `shinsui_syakujiigawa` / `shinsui_jyounantiku` /

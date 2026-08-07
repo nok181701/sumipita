@@ -108,6 +108,15 @@ def _overlay_ratio(towns, g, prefix):
 def _read_tokyo(subdir):
     files = sorted(glob.glob(os.path.join(paths.KSJ_TOKYO_DIR, subdir, "*.geojson")))
     files += sorted(glob.glob(os.path.join(paths.KSJ_KANTO_DIR, subdir, "*.geojson")))
+    if not files:
+        # 黙って空を返すと「家屋倒壊 0件」として完走してしまう。
+        # 本来795件・人口264万人が該当するハザードが、エラーも出さずに消える。
+        raise FileNotFoundError(
+            f"{subdir} のGeoJSONが1つも見つかりません。\n"
+            f"  探した場所: {paths.KSJ_TOKYO_DIR}/{subdir}\n"
+            f"             {paths.KSJ_KANTO_DIR}/{subdir}\n"
+            f"国土数値情報 A31a-25 の展開先を確認してください（README.md 参照）。"
+        )
     parts = []
     for f in files:
         g = gpd.read_file(f)
