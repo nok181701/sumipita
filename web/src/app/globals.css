@@ -6,9 +6,43 @@
   color-scheme: light;
 }
 
+/* 判定基準へのページ内リンクが飛んだと分かるように */
+html {
+  scroll-behavior: smooth;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+}
+
 body {
-  background: #fafaf9;
-  color: #1a1a1a;
+  /* 空と水のあいだくらいの薄い色。街を眺めている感じにしたい */
+  background:
+    radial-gradient(1100px 520px at 12% -8%, #e2f5fa 0%, transparent 62%),
+    radial-gradient(900px 460px at 92% 0%, #eef7ec 0%, transparent 58%),
+    #f7fcfd;
+  background-attachment: fixed;
+  color: #0f2c38;
   font-family: -apple-system, BlinkMacSystemFont, "Hiragino Sans", "Noto Sans JP",
     "Yu Gothic", sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* 数字は等幅で。スコアが並んだときにガタつかせない */
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
+}
+
+.maplibregl-popup-content {
+  border-radius: 12px;
+  padding: 8px 12px;
+  box-shadow: 0 8px 24px -12px rgba(15, 44, 56, 0.4);
+  border: 1px solid #dcecf1;
+}
+
+.maplibregl-ctrl-attrib {
+  border-radius: 8px 0 0 0;
+  font-size: 10px;
 }

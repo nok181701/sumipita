@@ -121,10 +121,18 @@ def build():
                 "flood_covered": flood_covered,
                 # 高潮浸水想定区域の対象17区に含まれるか
                 "tide_in_scope": tide_in_scope,
-                # ゼロメートル地帯
+                # ゼロメートル地帯（標高は高潮の補足として見せる）
                 "below_sea": flag(row["below_sea_flag"]),
                 # 業務地区（夜間人口を分母にした治安スコアが不当に低く出る）
                 "business_area": flag(row["business_area_flag"]),
+                # ボーリング地点が1本でもあるか。無ければ地盤スコアは出せない
+                "liq_covered": flag(row["liq_covered"]),
+                # ボーリングが2本以下。町丁目全体を代表しているとは限らない
+                "liq_thin": flag(row["liq_thin"]),
+                # 1923年関東大地震・2011年東北地方太平洋沖地震で実際に液状化した記録
+                "liq_history": flag(row["liq_history"]),
+                "liq_1923": flag(row["liq_1923"]),
+                "liq_2011": flag(row["liq_2011"]),
             },
 
             # --- 生の犯罪件数（スコアの根拠表示用）---
@@ -148,6 +156,12 @@ def build():
                 "tide_exposure": num(row["tide_exposure"], 3),
                 "mean_elev": num(row["tk_mean_elev"], 2),
                 "min_elev": num(row["tk_min_elev"], 2),
+                # 地盤（液状化）。PL値は平滑化後の代表値
+                "liq_points": num(row["liq_points"]),
+                "liq_small": num(row["liq_small"]),
+                "liq_mid": num(row["liq_mid"]),
+                "liq_large": num(row["liq_large"]),
+                "liq_pl": num(row["liq_pl"], 1),
             },
         })
 
@@ -184,6 +198,13 @@ def build():
                 "name": "東京都港湾局「高潮浸水想定区域図」",
                 "url": "https://catalog.data.metro.tokyo.lg.jp/",
                 "license": "CC BY 4.0",
+            },
+            {
+                "id": "tokyo_liquefaction",
+                "name": "東京都土木技術支援・人材育成センター「東京の液状化予測図 令和7年度改訂版」"
+                        "PL分布図・液状化履歴図",
+                "url": "https://doboku.metro.tokyo.lg.jp/start/03-jyouhou/ekijyouka/layertable.html",
+                "license": "CC BY 2.1 JP",
             },
             {
                 "id": "estat_boundary",
@@ -229,7 +250,7 @@ if __name__ == "__main__":
         "s": t["scores"]["safety"],
         "f": t["scores"]["flood"] if t["flags"]["flood_covered"] else None,
         "t": t["scores"]["tide"] if t["flags"]["tide_in_scope"] else None,
-        "g": t["scores"]["ground"] if t["flags"]["flood_covered"] else None,
+        "g": t["scores"]["ground"] if t["flags"]["liq_covered"] else None,
         "scored": t["flags"]["scored"],
         "tide_scope": t["flags"]["tide_in_scope"],
         # 地図のflyTo用（ポリゴン重心）

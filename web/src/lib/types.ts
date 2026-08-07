@@ -9,10 +9,18 @@ export type Flags = {
   flood_covered: boolean;
   /** 高潮浸水想定区域の対象17区に含まれるか */
   tide_in_scope: boolean;
-  /** ゼロメートル地帯 */
+  /** ゼロメートル地帯（標高は高潮の補足として見せる） */
   below_sea: boolean;
   /** 業務地区（夜間人口が分母のため治安スコアが不当に低く出る） */
   business_area: boolean;
+  /** ボーリング地点が1本でもあるか。無ければ地盤スコアは出せない */
+  liq_covered: boolean;
+  /** ボーリングが2本以下。町丁目全体を代表しているとは限らない */
+  liq_thin: boolean;
+  /** 過去の地震で実際に液状化した記録がある */
+  liq_history: boolean;
+  liq_1923: boolean;
+  liq_2011: boolean;
 };
 
 export type Crime = {
@@ -43,6 +51,13 @@ export type Hazard = {
   tide_exposure: number | null;
   mean_elev: number | null;
   min_elev: number | null;
+  /** 町丁目内のボーリング地点数 */
+  liq_points: number | null;
+  liq_small: number | null;
+  liq_mid: number | null;
+  liq_large: number | null;
+  /** 平滑化後のPL代表値 */
+  liq_pl: number | null;
 };
 
 export type Town = {

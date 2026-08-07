@@ -1,6 +1,6 @@
 # スムピタ
 
-東京23区の町丁目ごとに、**治安・洪水・高潮・地盤**の4つのリスクを公的データから可視化する
+東京23区の町丁目ごとに、**治安・洪水・高潮・地盤（液状化）**の4つのリスクを公的データから可視化する
 引越し先リサーチダッシュボード。
 
 設計判断の経緯はすべて [`machi-project-plan.md`](machi-project-plan.md) にある。
@@ -15,6 +15,7 @@ etl/
   polygon_join.py       町丁目ポリゴンの読み込みと人口データへの結合
   tokyo_flood.py        東京都「浸水予想区域図」の集計（洪水の主軸）
   takashio.py           東京都港湾局「高潮浸水想定区域図」の集計
+  liquefaction.py       東京の液状化予測図（PL分布図・液状化履歴図）の集計
   flood_join.py         国土数値情報の空間結合（家屋倒壊等氾濫想定区域の補完用）※未回収
   combine_scores.py     4軸を統合 → cache/sumupita_scores.csv
   export_d1.py          D1投入用CSV + R2用GeoJSON を dist/ に書き出す
@@ -45,6 +46,7 @@ pip install -r requirements.txt
 | `data/shinsui_*.csv`（7流域） | 東京都 浸水予想区域図（改定）浸水深・地盤高データ | [東京都オープンデータ](https://catalog.data.metro.tokyo.lg.jp/dataset/t000014d0000000029) |
 | `data/shp/r2ka13.*` | e-Stat 令和2年国勢調査 町丁・字等別境界データ（東京都） | [e-Stat](https://www.e-stat.go.jp/gis/statmap-search?type=2) → 小地域 → 2020年 → 世界測地系緯度経度Shapefile → 13 東京都 |
 | `data/takashio/shape(depth)/*.shp` | 東京都港湾局 高潮浸水想定区域図［想定最大規模］（浸水深） | [東京都オープンデータ](https://catalog.data.metro.tokyo.lg.jp/dataset/t000015d1700000007)（`shape_depth_.zip`・展開後345MB） |
+| `data/liquefaction/PL分布図/`<br>`data/liquefaction/液状化履歴図/` | 東京の液状化予測図 令和7年度改訂版 の公開データ | [公開データ（地図情報等）](https://doboku.metro.tokyo.lg.jp/start/03-jyouhou/ekijyouka/layertable.html) から `PL分布図.zip` と `液状化履歴図.zip` |
 
 浸水予想区域図で必要な7流域:
 `shinsui_kandagawa` / `shinsui_sumidagawa` / `shinsui_syakujiigawa` / `shinsui_jyounantiku` /
@@ -90,7 +92,7 @@ cd web && npm install && npm run dev
 | `dist/towns.csv` | 3,142行。緯度経度・面積・国勢調査コード付き |
 | `dist/town_scores.csv` | 4軸スコア + 各種フラグ |
 | `dist/crime_counts.csv` | 生の犯罪件数（スコアの根拠表示用） |
-| `dist/hazard_details.csv` | 浸水深・地盤高 |
+| `dist/hazard_details.csv` | 浸水深・地盤高・液状化（ボーリング点数と判定内訳・履歴フラグ） |
 | `dist/geojson/{区コード}.geojson` | 町丁目ポリゴン 23ファイル + `wards.geojson`。計6.3MB |
 
 ポリゴンの紐付け率は99.90%（3,139/3,142）。
@@ -98,8 +100,9 @@ cd web && npm install && npm run dev
 
 ## 現状
 
-- 4軸スコア: 3,142町丁目中2,994件で算出済み
-- ETLパイプライン: 生データから通しで再現可能（既存 `cache/sumupita_scores.csv` とバイナリ一致を確認済み）
+- 4軸スコア: 治安・洪水・高潮は3,142町丁目中2,994件、地盤（液状化）は2,538件で算出済み
+  （地盤はボーリング地点が1つもない456件を判定不能としているため少ない）
+- ETLパイプライン: 生データから通しで再現可能
 - スコアカードUI: 実装済み
 - 地図: 実装済み（MapLibre GL JS + 地理院タイル。軸タブで塗り分けを切り替え）
 - D1 + Workers API: 未実装

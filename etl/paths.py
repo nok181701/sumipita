@@ -40,6 +40,12 @@ POLYGON_SHP = os.environ.get(
 TIDE_SHP_DIR = os.environ.get(
     "SUMIPITA_TAKASHIO", os.path.join(DATA_DIR, "takashio", "shape(depth)"))
 
+# 東京の液状化予測図（令和7年度改訂版・2026年3月29日公開）の公開データ。
+# 予測図そのもの（250mメッシュの3区分）はWeb閲覧専用で配布されていないため、
+# その材料であるボーリング地点のPL判定結果と、液状化の実績図を使う。
+LIQ_PL_SHP = os.path.join(DATA_DIR, "liquefaction", "PL分布図", "liqpt.shp")
+LIQ_HISTORY_DIR = os.path.join(DATA_DIR, "liquefaction", "液状化履歴図")
+
 
 def require(path, what):
     """入力ファイルが無いときに、何をどこに置けばよいか分かるエラーを出す"""

@@ -24,8 +24,8 @@ function MiniBar({ value, title }: { value: number | null; title?: string }) {
   return (
     <div
       title={value === null ? (title ?? "データなし") : undefined}
-      className={`h-1.5 w-10 overflow-hidden rounded-full ${
-        value === null ? "bg-line/60 outline-dashed outline-1 outline-offset-1 outline-line" : "bg-line"
+      className={`h-1.5 w-9 overflow-hidden rounded-full ${
+        value === null ? "bg-line/50 outline-dashed outline-1 outline-offset-1 outline-line" : "bg-line"
       }`}
     >
       {value !== null && (
@@ -67,36 +67,46 @@ export default function TownSearch({
 
   return (
     <div className="flex h-full flex-col">
-      <div className="flex gap-2 p-3">
-        <select
-          value={ward}
-          onChange={(e) => setWard(e.target.value)}
-          className="rounded border border-line bg-white px-2 py-1.5 text-sm"
-        >
-          <option value="">全23区</option>
-          {wards.map((w) => (
-            <option key={w} value={w}>
-              {w}
-            </option>
-          ))}
-        </select>
+      <div className="space-y-2 p-3">
+        <p className="px-0.5 text-[11px] font-medium text-aqua-600">
+          気になっている街を入れてみてください
+        </p>
         <input
           value={q}
           onChange={(e) => setQ(e.target.value)}
           placeholder="町丁目で検索（例: 三軒茶屋、芝浦2丁目）"
-          className="min-w-0 flex-1 rounded border border-line bg-white px-3 py-1.5 text-sm"
+          className="w-full rounded-full border border-line bg-aqua-50/60 px-4 py-2 text-sm outline-none transition-colors placeholder:text-muted/70 focus:border-aqua-500 focus:bg-white"
         />
+        <div className="flex flex-wrap gap-1">
+          <button
+            onClick={() => setWard("")}
+            className={`rounded-full px-2.5 py-1 text-[11px] transition-colors ${
+              ward === "" ? "bg-aqua-500 font-medium text-white" : "bg-aqua-50 text-muted hover:bg-aqua-100"
+            }`}
+          >
+            全23区
+          </button>
+          {wards.map((w) => (
+            <button
+              key={w}
+              onClick={() => setWard(w)}
+              className={`rounded-full px-2.5 py-1 text-[11px] transition-colors ${
+                ward === w ? "bg-aqua-500 font-medium text-white" : "bg-aqua-50 text-muted hover:bg-aqua-100"
+              }`}
+            >
+              {w.replace("区", "")}
+            </button>
+          ))}
+        </div>
       </div>
 
-      <div className="flex items-center justify-between px-4 pb-1 text-[11px] text-muted">
-        <span title="点線の枠は対象区域外またはデータなし">
-          {results.length === 60 ? "上位60件" : `${results.length}件`}
-        </span>
-        <span className="flex gap-1.5">
-          <span className="w-10 text-center">治安</span>
-          <span className="w-10 text-center">洪水</span>
-          <span className="w-10 text-center">高潮</span>
-          <span className="w-10 text-center">地盤</span>
+      <div className="flex items-center justify-between px-4 pb-1.5 text-[10px] text-muted">
+        <span>{results.length === 60 ? "上位60件" : `${results.length}件`}</span>
+        <span className="flex gap-1.5" title="点線の枠は対象区域外またはデータなし">
+          <span className="w-9 text-center">治安</span>
+          <span className="w-9 text-center">洪水</span>
+          <span className="w-9 text-center">高潮</span>
+          <span className="w-9 text-center">地盤</span>
         </span>
       </div>
 
@@ -105,16 +115,14 @@ export default function TownSearch({
           <li key={e.key}>
             <button
               onClick={() => onSelect(e.key)}
-              className={`flex w-full items-center gap-2 border-b border-line px-4 py-2 text-left text-sm hover:bg-black/[0.03] ${
-                selectedKey === e.key ? "bg-black/[0.05]" : ""
+              className={`flex w-full items-center gap-2 border-b border-line/70 px-4 py-2.5 text-left text-[13px] transition-colors ${
+                selectedKey === e.key ? "bg-aqua-100/80 font-medium" : "hover:bg-aqua-50"
               }`}
             >
               <span className="min-w-0 flex-1 truncate">
-                <span className="text-muted">{e.ward}</span>
+                <span className="mr-1 text-[11px] text-muted">{e.ward}</span>
                 {e.town}
-                {!e.scored && (
-                  <span className="ml-1.5 text-[11px] text-muted">（算出対象外）</span>
-                )}
+                {!e.scored && <span className="ml-1.5 text-[10px] text-muted">（対象外）</span>}
               </span>
               <span className="flex shrink-0 gap-1.5">
                 <MiniBar value={e.s} />
@@ -126,7 +134,11 @@ export default function TownSearch({
           </li>
         ))}
         {results.length === 0 && (
-          <li className="px-4 py-6 text-center text-sm text-muted">該当する町丁目がありません</li>
+          <li className="px-4 py-8 text-center text-sm text-muted">
+            見つかりませんでした。
+            <br />
+            <span className="text-[12px]">「三軒茶屋」のように町名だけでも探せます</span>
+          </li>
         )}
       </ul>
     </div>

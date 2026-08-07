@@ -72,7 +72,9 @@ def export(rebuild=False):
     for c in ['safety_score', 'flood_score', 'tide_score', 'ground_score',
               'serious_score', 'daily_score',
               'flood_exposure', 'tide_exposure']:
+        # ground_score は令和7年度改訂の液状化予測図ベース（旧: 平均地盤高）
         s[c] = m[c]
+    s['elev_score'] = m['elev_score']   # 旧・地盤スコア（標高順位）。参考値
     s['mean_elev_m'] = m['tk_mean_elev']
     s['below_sea'] = m['below_sea_flag'].fillna(False).astype(int)
     s['business_area'] = m['business_area_flag'].fillna(False).astype(int)
@@ -107,6 +109,18 @@ def export(rebuild=False):
     h['tide_in_scope'] = m['ward'].isin(TIDE_WARDS).astype(int)
     h['mean_elev_m'] = m['tk_mean_elev']
     h['min_elev_m'] = m['tk_min_elev']
+    # 地盤（液状化）。ボーリング地点が無い町丁目は liq_covered=0 で、
+    # スコアが無いことと液状化しないことを取り違えないようにする
+    h['liq_points'] = m['liq_points'].fillna(0).astype(int)
+    h['liq_small'] = m['liq_small'].fillna(0).astype(int)
+    h['liq_mid'] = m['liq_mid'].fillna(0).astype(int)
+    h['liq_large'] = m['liq_large'].fillna(0).astype(int)
+    h['liq_pl'] = m['liq_pl']
+    h['liq_covered'] = m['liq_covered'].fillna(False).astype(int)
+    h['liq_thin'] = m['liq_thin'].fillna(False).astype(int)
+    h['liq_history'] = m['liq_history'].fillna(False).astype(int)
+    h['liq_1923'] = m['liq_1923'].fillna(False).astype(int)
+    h['liq_2011'] = m['liq_2011'].fillna(False).astype(int)
     h.to_csv(f'{OUT}/hazard_details.csv', index=False)
 
     # --- R2用 GeoJSON（区ごとに分割。フロントは表示中の区だけ取得する）---

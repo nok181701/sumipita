@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import maplibregl from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
 import { AXES } from "@/lib/axes";
+import { CRITERIA_ANCHOR } from "@/lib/criteria";
 import type { Axis, IndexEntry } from "@/lib/types";
 
 /** index.json のスコアキー。axes.ts の Axis と1対1で対応する */
@@ -20,22 +21,31 @@ const HATCH = "towns-hatch";
 const LINE = "towns-line";
 const PICKED = "towns-picked";
 
-const NO_DATA = "#d4d4d8";
+const NO_DATA = "#cfdfe5";
 
 /**
  * 塗り分けは0-100の連続値。しきい値ごとに色を切るとスコアカードの
  * 「良好/平均的/注意」と二重の基準になるので、連続的に補間する。
+ * 彩度は抑えているが、赤〜緑の順序は崩さない。安全の話なので色で油断させない。
  */
+const RAMP = ["#e35d6a", "#ec8a72", "#e8a13a", "#d9bf52", "#5cc79b", "#0fa97f"];
+
 const colorRamp = (prop: string): maplibregl.ExpressionSpecification => [
   "interpolate",
   ["linear"],
   ["to-number", ["get", prop]],
-  0, "#b91c1c",
-  25, "#dc2626",
-  40, "#d97706",
-  55, "#ca8a04",
-  70, "#16a34a",
-  100, "#15803d",
+  0,
+  RAMP[0],
+  25,
+  RAMP[1],
+  40,
+  RAMP[2],
+  55,
+  RAMP[3],
+  70,
+  RAMP[4],
+  100,
+  RAMP[5],
 ];
 
 /** 斜線パターン。「データがない」を色で塗らないための地の模様 */
@@ -45,9 +55,9 @@ function hatchImage(): ImageData {
   c.width = s;
   c.height = s;
   const ctx = c.getContext("2d")!;
-  ctx.fillStyle = "#f4f4f5";
+  ctx.fillStyle = "#eef5f7";
   ctx.fillRect(0, 0, s, s);
-  ctx.strokeStyle = "#a1a1aa";
+  ctx.strokeStyle = "#9fb6bf";
   ctx.lineWidth = 1.2;
   ctx.beginPath();
   ctx.moveTo(-2, s + 2);
@@ -67,7 +77,12 @@ type Props = {
   onSelect: (key: string) => void;
 };
 
-export default function MapView({ entries, wardCodes, selectedKey, onSelect }: Props) {
+export default function MapView({
+  entries,
+  wardCodes,
+  selectedKey,
+  onSelect,
+}: Props) {
   const container = useRef<HTMLDivElement>(null);
   const map = useRef<maplibregl.Map | null>(null);
   const popup = useRef<maplibregl.Popup | null>(null);
@@ -91,7 +106,9 @@ export default function MapView({ entries, wardCodes, selectedKey, onSelect }: P
         sources: {
           gsi: {
             type: "raster",
-            tiles: ["https://cyberjapandata.gsi.go.jp/xyz/pale/{z}/{x}/{y}.png"],
+            tiles: [
+              "https://cyberjapandata.gsi.go.jp/xyz/pale/{z}/{x}/{y}.png",
+            ],
             tileSize: 256,
             maxzoom: 18,
             attribution:
@@ -106,8 +123,14 @@ export default function MapView({ entries, wardCodes, selectedKey, onSelect }: P
       minZoom: 8,
     });
     map.current = m;
-    m.addControl(new maplibregl.NavigationControl({ showCompass: false }), "top-right");
-    m.addControl(new maplibregl.ScaleControl({ unit: "metric" }), "bottom-left");
+    m.addControl(
+      new maplibregl.NavigationControl({ showCompass: false }),
+      "top-right",
+    );
+    m.addControl(
+      new maplibregl.ScaleControl({ unit: "metric" }),
+      "bottom-left",
+    );
 
     popup.current = new maplibregl.Popup({
       closeButton: false,
@@ -134,7 +157,11 @@ export default function MapView({ entries, wardCodes, selectedKey, onSelect }: P
             if (!e) continue;
             // 値が無い軸はプロパティ自体を持たせない。
             // has で「データなし」を判定でき、null を0点として塗る事故が起きない。
-            const props: Record<string, unknown> = { key: e.key, ward: e.ward, town: e.town };
+            const props: Record<string, unknown> = {
+              key: e.key,
+              ward: e.ward,
+              town: e.town,
+            };
             if (e.s !== null) props.s = e.s;
             if (e.f !== null) props.f = e.f;
             if (e.t !== null) props.t = e.t;
@@ -148,7 +175,10 @@ export default function MapView({ entries, wardCodes, selectedKey, onSelect }: P
 
       m.addSource(SRC, {
         type: "geojson",
-        data: { type: "FeatureCollection", features } as GeoJSON.FeatureCollection,
+        data: {
+          type: "FeatureCollection",
+          features,
+        } as GeoJSON.FeatureCollection,
       });
 
       m.addLayer({
@@ -167,7 +197,11 @@ export default function MapView({ entries, wardCodes, selectedKey, onSelect }: P
         id: LINE,
         type: "line",
         source: SRC,
-        paint: { "line-color": "#71717a", "line-width": 0.4, "line-opacity": 0.5 },
+        paint: {
+          "line-color": "#71717a",
+          "line-width": 0.4,
+          "line-opacity": 0.5,
+        },
       });
       m.addLayer({
         id: PICKED,
@@ -197,8 +231,8 @@ export default function MapView({ entries, wardCodes, selectedKey, onSelect }: P
           v === undefined || v === null
             ? '<span style="color:#a1a1aa">データなし / 対象区域外</span>'
             : `${Number(v).toFixed(0)} 点`;
-        popup.current!
-          .setLngLat(e.lngLat)
+        popup
+          .current!.setLngLat(e.lngLat)
           .setHTML(
             `<div style="font-size:12px;line-height:1.5">
                <strong>${p.ward}${p.town}</strong><br/>${label}: ${shown}
@@ -254,69 +288,103 @@ export default function MapView({ entries, wardCodes, selectedKey, onSelect }: P
     m.setFilter(PICKED, ["==", ["get", "key"], selectedKey]);
     const e = entries.find((x) => x.key === selectedKey);
     if (e?.lat && e?.lng) {
-      m.easeTo({ center: [e.lng, e.lat], zoom: Math.max(m.getZoom(), 13.5), duration: 600 });
+      m.easeTo({
+        center: [e.lng, e.lat],
+        zoom: Math.max(m.getZoom(), 13.5),
+        duration: 600,
+      });
     }
   }, [selectedKey, loaded, entries]);
 
   const meta = AXES.find((a) => a.id === axis)!;
 
   return (
-    <section className="overflow-hidden rounded-lg border border-line bg-white shadow-sm">
-      <div className="flex flex-wrap items-center gap-1 border-b border-line p-2">
+    <section className="overflow-hidden rounded-card border border-line bg-white shadow-card">
+      <div className="flex flex-wrap items-center gap-1.5 p-2.5">
         {AXES.map((a) => (
           <button
             key={a.id}
             onClick={() => setAxis(a.id)}
-            className={`rounded px-3 py-1.5 text-sm transition-colors ${
+            className={`rounded-full px-3.5 py-1.5 text-[13px] transition-colors ${
               axis === a.id
-                ? "bg-ink font-medium text-white"
-                : "text-muted hover:bg-black/[0.04] hover:text-ink"
+                ? "bg-aqua-500 font-semibold text-white shadow-sm"
+                : "bg-aqua-50 text-muted hover:bg-aqua-100 hover:text-ink"
             }`}
           >
             {a.label}
           </button>
         ))}
-        <span className="ml-auto pr-1 text-[11px] text-muted">{meta.unit}</span>
+      </div>
+
+      <p className="px-4 text-[12px] leading-snug text-muted">
+        地図をクリックすると下に詳しく出ます。
+      </p>
+
+      {/* 「この点数は何を数えているのか」への導線。
+          スコアだけ見せて根拠が辿れないと、信じるか無視するかの二択になってしまう */}
+      <div className="flex flex-wrap items-center gap-x-1 gap-y-1 px-4 pb-2.5 pt-2 text-[11.5px]">
+        <span className="mr-0.5 text-muted">各項目の基準について:</span>
+        {AXES.map((a) => (
+          <a
+            key={a.id}
+            href={`/criteria#${CRITERIA_ANCHOR(a.id)}`}
+            target="_blank"
+            rel="noreferrer noopener"
+            className="rounded-full border border-aqua-200 px-2.5 py-0.5 text-aqua-700 transition-colors hover:bg-aqua-100"
+          >
+            {a.label}
+          </a>
+        ))}
       </div>
 
       <div className="relative">
         <div ref={container} className="h-[420px] w-full lg:h-[480px]" />
 
         {!loaded && (
-          <div className="absolute inset-0 flex items-center justify-center bg-white/70 text-sm text-muted">
-            ポリゴンを読み込み中… {progress}%
+          <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-white/80 text-sm text-muted">
+            <div className="h-1.5 w-40 overflow-hidden rounded-full bg-line">
+              <div
+                className="h-full rounded-full bg-aqua-500 transition-all"
+                style={{ width: `${progress}%` }}
+              />
+            </div>
+            23区の町丁目を並べています… {progress}%
           </div>
         )}
 
-        <div className="pointer-events-none absolute bottom-6 right-2 rounded border border-line bg-white/95 px-3 py-2 text-[11px] shadow-sm">
-          <div className="mb-1 font-medium">{meta.label}スコア</div>
+        <div className="pointer-events-none absolute bottom-8 right-2.5 rounded-xl border border-line bg-white/95 px-3 py-2.5 text-[11px] shadow-card backdrop-blur-sm">
+          <div className="mb-1.5 font-semibold">{meta.label}</div>
           <div className="flex items-center gap-1.5">
-            <span className="text-muted">0</span>
+            <span className="text-muted">要確認</span>
             <span
-              className="h-2 w-24 rounded-full"
+              className="h-2.5 w-20 rounded-full"
               style={{
-                background:
-                  "linear-gradient(90deg,#b91c1c,#dc2626,#d97706,#ca8a04,#16a34a,#15803d)",
+                background: `linear-gradient(90deg, ${RAMP.join(",")})`,
               }}
             />
-            <span className="text-muted">100</span>
+            <span className="text-muted">良好</span>
           </div>
-          <div className="mt-1.5 flex items-center gap-1.5">
+          <div className="mt-2 flex items-center gap-1.5">
             <span
-              className="inline-block h-3 w-5 rounded-sm border border-line"
+              className="inline-block h-3 w-5 rounded border border-line"
               style={{
                 background:
-                  "repeating-linear-gradient(45deg,#f4f4f5 0 2px,#a1a1aa 2px 3px)",
+                  "repeating-linear-gradient(45deg,#eef5f7 0 2px,#9fb6bf 2px 3px)",
               }}
             />
-            <span className="text-muted">対象区域外 / データなし</span>
+            <span className="text-muted">調べていない区域</span>
           </div>
         </div>
       </div>
 
-      <p className="border-t border-line px-3 py-2 text-[11px] leading-relaxed text-muted">
-        斜線は「調査の対象外またはデータが存在しない」ことを表します。安全と確認された区域ではありません。
-        高潮は世田谷・渋谷・中野・杉並・豊島・練馬の6区が対象外です。
+      <p className="border-t border-line bg-aqua-50/50 px-4 py-2.5 text-[11px] leading-relaxed text-muted">
+        斜線の区域は
+        <strong className="font-semibold text-ink">
+          「調査の対象外、またはデータが存在しない」
+        </strong>
+        という意味です。安全が確認された場所ではないので、色がついている町丁目と同じ土俵で比べないでください。
+        高潮は世田谷・渋谷・中野・杉並・豊島・練馬の6区がそもそも想定区域の対象外、
+        地盤はボーリング調査の地点が1つもない456町丁目が該当します。
       </p>
     </section>
   );

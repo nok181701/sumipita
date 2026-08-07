@@ -2,41 +2,52 @@ import type { Axis, Town } from "./types";
 
 /**
  * 4軸は合成しない。
- * 治安と災害3軸の相関は0.06前後（実質ゼロ）で、「治安の良い街＝安全な街」は成り立たない。
- * 災害3軸すべて70点以上の413件のうち治安も70点以上なのは152件（37%）だけ。
+ * 治安と災害3軸の相関は0.02〜0.14（実質ゼロ）で、「治安の良い街＝安全な街」は成り立たない。
+ * 災害3軸すべて70点以上の413件のうち、治安も70点以上なのは129件（31%）だけ。
  * 総合点を出すと、この見落としが必ず起きる。
  */
-export const AXES: { id: Axis; label: string; unit: string; what: string }[] = [
+export const AXES: {
+  id: Axis;
+  label: string;
+  unit: string;
+  what: string;
+}[] = [
   {
     id: "safety",
     label: "治安",
     unit: "重大犯罪65% / 生活犯罪35%",
     what:
-      "強盗・暴行・傷害などの暴力犯罪と、空き巣・忍込み・居空きの住宅侵入窃盗を重大犯罪として65%、" +
-      "自転車盗・車上ねらい・ひったくりなどを生活犯罪として35%で評価。" +
-      "万引き・詐欺・占有離脱物横領は商業施設の有無で決まり住民の体感治安と無関係なため除外。",
+      "強盗・暴行・傷害といった暴力犯罪と、空き巣・忍込み・居空きのような「住んでいる家に入られる」犯罪を" +
+      "重大犯罪として65%、自転車盗・車上ねらい・ひったくりなど日常で遭いやすいものを35%で見ています。" +
+      "万引きや詐欺は駅前に店が多いかどうかで決まってしまい、そこに住む人の安心とは別物なので外しました。",
   },
   {
     id: "flood",
     label: "洪水・内水",
     unit: "町丁目全体で均した平均浸水深",
     what:
-      "東京都「浸水予想区域図」から、町丁目のうち浸水想定区域が占める面積割合 × 区域内の平均浸水深。" +
-      "大雨による河川氾濫・内水氾濫を想定。",
+      "東京都「浸水予想区域図」から、町丁目のうち浸水想定区域が占める面積割合 × 区域内の平均浸水深で算出。" +
+      "川があふれる外水氾濫と、下水が処理しきれず道が冠水する内水氾濫の両方を含みます。" +
+      "同じ区でも一本道を挟んで大きく変わるので、町丁目の単位で見る意味があります。",
   },
   {
     id: "tide",
     label: "高潮",
     unit: "町丁目全体で均した平均浸水深",
     what:
-      "東京都港湾局「高潮浸水想定区域図」から洪水と同じ定義で算出。" +
-      "室戸台風級の台風＋堤防決壊を想定した、洪水とは別種のリスク。",
+      "東京都港湾局「高潮浸水想定区域図」を洪水と同じ定義で数値化。" +
+      "室戸台風級（910hPa）が最悪の経路で来て、堤防が決壊する前提のかなり厳しい想定です。" +
+      "大雨には強くても高潮には無力な街があるので、洪水とは別の軸に分けています。",
   },
   {
     id: "ground",
     label: "地盤",
-    unit: "平均地盤高の順位",
-    what: "東京都「浸水予想区域図」に含まれる地盤高データの平均値。標高が高いほど高得点。",
+    unit: "ボーリング調査によるPL判定",
+    what:
+      "「東京の液状化予測図」のもとになっているボーリング地点の液状化判定（PL値）を、" +
+      "町丁目ごとに集計しています。埋立地や昔の川筋のような、砂と水を含んだゆるい地盤ほど低得点です。" +
+      "当初この軸は標高でしたが、高潮スコアと相関0.856あって1軸まるごと重複していたため、" +
+      "地盤そのものの性質に置き換えました。",
   },
 ];
 
@@ -73,18 +84,23 @@ export function buildAxisViews(t: Town): AxisView[] {
     score: scores.safety,
     status: notScored ? "not_scored" : "scored",
     statusNote: notScored
-      ? "居住人口が100人未満のため算出していません。発生率の分母が小さすぎて数値が発散するためです。"
+      ? "住んでいる人が100人未満の町丁目なので、スコアは出していません。分母が小さすぎて数字が跳ねてしまうためです。"
       : flags.business_area
-        ? "業務地区の可能性があります。犯罪件数を夜間人口で割っているため、昼間人口が多い地区はスコアが実態より低く出ます。"
+        ? "オフィス街の可能性があります。犯罪件数を「夜そこで寝ている人の数」で割っているので、昼間に人が集まる街は実際より点が低く出ます。住宅として見るときは割り引いて読んでください。"
         : null,
     evidence: [
       { label: "重大犯罪（2年合算）", value: int(crime.serious_2y, " 件") },
       { label: "うち強盗", value: int(crime.robbery, " 件") },
-      { label: "うち暴行・傷害", value: int((crime.assault ?? 0) + (crime.injury ?? 0), " 件") },
+      {
+        label: "うち暴行・傷害",
+        value: int((crime.assault ?? 0) + (crime.injury ?? 0), " 件"),
+      },
       {
         label: "うち住宅侵入窃盗",
         value: int(
-          (crime.burglary_akisu ?? 0) + (crime.burglary_shinobi ?? 0) + (crime.burglary_izora ?? 0),
+          (crime.burglary_akisu ?? 0) +
+            (crime.burglary_shinobi ?? 0) +
+            (crime.burglary_izora ?? 0),
           " 件",
         ),
       },
@@ -106,13 +122,16 @@ export function buildAxisViews(t: Town): AxisView[] {
     status: floodStatus,
     statusNote:
       floodStatus === "no_data"
-        ? "浸水予想区域図の対象流域に含まれていないため、データがありません。安全と確認されたわけではありません。"
+        ? "浸水予想区域図の対象流域から外れていて、そもそもデータがありません。安全だと確認できたわけではありません。"
         : floodStatus === "not_scored"
-          ? "居住人口が100人未満のため算出していません。"
-          : "浸水深0.1m未満の区域は元データで着色されていません。「0m」は浸水しないことの保証ではありません。",
+          ? "住んでいる人が100人未満の町丁目なので、スコアは出していません。"
+          : "元データでは浸水深0.1m未満の区域に色がついていません。「0m」は浸水しない保証ではないので、そこは差し引いて見てください。",
     evidence: [
       { label: "浸水想定区域の面積割合", value: pct(hazard.flood_ratio) },
-      { label: "区域内の平均浸水深", value: fmt(hazard.flood_mean_depth, 2, " m") },
+      {
+        label: "区域内の平均浸水深",
+        value: fmt(hazard.flood_mean_depth, 2, " m"),
+      },
       { label: "最大浸水深", value: fmt(hazard.flood_max_depth, 2, " m") },
     ],
   };
@@ -131,20 +150,26 @@ export function buildAxisViews(t: Town): AxisView[] {
     status: tideStatus,
     statusNote:
       tideStatus === "out_of_scope"
-        ? "この区は高潮浸水想定区域図の対象外です（内陸のため東京都が想定区域を設定していません）。調査した結果リスクがなかった、という意味ではありません。"
+        ? "この区は内陸のため、東京都が高潮の想定区域そのものを設定していません。調べた結果リスクがなかった、ということではないので、点数として比べないでください。"
         : tideStatus === "not_scored"
-          ? "居住人口が100人未満のため算出していません。"
+          ? "住んでいる人が100人未満の町丁目なので、スコアは出していません。"
           : null,
+    // 標高は独立した軸から外したが、カード下部に「この土地の高さ」として
+    // 常時表示している（ScoreCard の Elevation）。ここに重ねて出すと二重になる。
     evidence: [
       { label: "浸水想定区域の面積割合", value: pct(hazard.tide_ratio) },
-      { label: "区域内の平均浸水深", value: fmt(hazard.tide_mean_depth, 2, " m") },
+      {
+        label: "区域内の平均浸水深",
+        value: fmt(hazard.tide_mean_depth, 2, " m"),
+      },
       { label: "最大浸水深", value: fmt(hazard.tide_max_depth, 2, " m") },
     ],
   };
 
+  // 地盤は液状化。ボーリング地点が1本も無い町丁目は算出できない（456件）
   const groundStatus: AxisStatus = notScored
     ? "not_scored"
-    : !flags.flood_covered
+    : !flags.liq_covered
       ? "no_data"
       : "scored";
   const ground: AxisView = {
@@ -154,15 +179,37 @@ export function buildAxisViews(t: Town): AxisView[] {
     status: groundStatus,
     statusNote:
       groundStatus === "no_data"
-        ? "地盤高データの対象流域外のためデータがありません。"
+        ? "この町丁目にはボーリング調査の地点が1つもないため、判定できません。地盤が良いという意味ではありません。"
         : groundStatus === "not_scored"
-          ? "居住人口が100人未満のため算出していません。"
-          : flags.below_sea
-            ? "ゼロメートル地帯です。平均地盤高が満潮時の海面より低く、いったん浸水すると自然排水されません。"
-            : null,
+          ? "住んでいる人が100人未満の町丁目なので、スコアは出していません。"
+          : flags.liq_history
+            ? `過去の地震で実際に液状化した記録がある町丁目です（${
+                [
+                  flags.liq_1923 ? "1923年 関東大地震" : null,
+                  flags.liq_2011 ? "2011年 東北地方太平洋沖地震" : null,
+                ]
+                  .filter(Boolean)
+                  .join(" / ") || "東京都の液状化履歴図に記録あり"
+              }）。`
+            : flags.liq_thin
+              ? "この町丁目のボーリング地点は2本以下です。1〜2本が町全体を代表しているとは限らないので、点数は参考程度に見てください。"
+              : null,
     evidence: [
-      { label: "平均地盤高", value: fmt(hazard.mean_elev, 2, " m") },
-      { label: "最低地盤高", value: fmt(hazard.min_elev, 2, " m") },
+      { label: "ボーリング地点数", value: int(hazard.liq_points, " 地点") },
+      { label: "液状化の可能性 大", value: int(hazard.liq_large, " 地点") },
+      { label: "同 中", value: int(hazard.liq_mid, " 地点") },
+      { label: "同 小", value: int(hazard.liq_small, " 地点") },
+      { label: "PL値（平滑化後）", value: fmt(hazard.liq_pl, 1) },
+      {
+        label: "過去の液状化",
+        value: flags.liq_1923
+          ? "1923年に記録あり"
+          : flags.liq_2011
+            ? "2011年に記録あり"
+            : flags.liq_history
+              ? "記録あり"
+              : "記録なし",
+      },
     ],
   };
 
@@ -176,16 +223,32 @@ export function typhoonSpecific(t: Town): boolean {
   return flood >= 70 && tide <= 30;
 }
 
+/** 彩度は落としているが、赤〜緑の順序は保つ。安全の話なので色で油断させない */
 export function scoreColor(score: number | null): string {
-  if (score === null) return "#9ca3af";
-  if (score >= 70) return "#15803d";
-  if (score >= 40) return "#b45309";
-  return "#b91c1c";
+  if (score === null) return "#9fb6bf";
+  if (score >= 70) return "#0fa97f";
+  if (score >= 40) return "#e8a13a";
+  return "#e35d6a";
+}
+
+export function scoreBg(score: number | null): string {
+  if (score === null) return "#eef4f6";
+  if (score >= 70) return "#e6f7f1";
+  if (score >= 40) return "#fdf3e3";
+  return "#fdeced";
 }
 
 export function scoreLabel(score: number | null): string {
   if (score === null) return "—";
+  if (score >= 70) return "安心して選べる";
+  if (score >= 40) return "23区の真ん中あたり";
+  return "見に行く前に知っておきたい";
+}
+
+/** バーの横などに置く短いラベル */
+export function scoreLabelShort(score: number | null): string {
+  if (score === null) return "—";
   if (score >= 70) return "良好";
   if (score >= 40) return "平均的";
-  return "注意";
+  return "要確認";
 }
