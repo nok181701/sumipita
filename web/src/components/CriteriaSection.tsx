@@ -87,11 +87,23 @@ function Block({ c }: { c: Criteria }) {
   );
 }
 
-export default function CriteriaSection() {
+/**
+ * @param heading 単独ページ（/criteria）ではこれが主見出しになるので h1 を渡す。
+ *   トップに埋め込む場合は h1 が別にあるため h2 のままにすること。
+ *   見出しレベルの重複や飛びは、クローラにも読み上げにも効く。
+ */
+export default function CriteriaSection({
+  heading = "h2",
+}: {
+  heading?: "h1" | "h2";
+}) {
+  const Heading = heading;
   return (
     <section id="criteria" className="scroll-mt-4 space-y-4">
       <header className="px-1">
-        <h2 className="text-xl font-bold tracking-tight">判定基準</h2>
+        <Heading className="text-xl font-bold tracking-tight">
+          スムピタの判定基準
+        </Heading>
         <p className="mt-1 text-[12.5px] leading-relaxed text-muted">
           点数はすべて、23区3,142町丁目の中での相対的な順位です（100に近いほど上位）。
           絶対的な安全性を表すものではありません。何をどう数えているかを、軸ごとに書いておきます。

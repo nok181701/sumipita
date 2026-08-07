@@ -108,6 +108,38 @@ cd web && npm install && npm run dev
 - D1 + Workers API: 未実装
 - `flood_join.py`（国土数値情報の空間結合。家屋倒壊等氾濫想定区域の補完用）は未回収
 
+### SEO
+
+設定は `web/src/lib/site.ts` に集約している。タイトル・説明文・キーワード・OG画像のパスはここだけ直せばよい。
+
+**公開前に必ずドメインを設定すること。** 未設定だと `https://sumipita.example.com` という仮の値が
+canonical・OGP・sitemap.xml すべてに入る。
+
+```bash
+# web/.env.production
+NEXT_PUBLIC_SITE_URL=https://実際のドメイン
+```
+
+| 項目 | 場所 |
+|---|---|
+| title / description / keywords / OGP / Twitter Card / robots | `src/app/layout.tsx` |
+| ページ個別の title・description | 各 `page.tsx` の `metadata` |
+| 構造化データ（WebSite / WebApplication / Dataset / FAQPage） | `src/components/StructuredData.tsx` |
+| robots.txt | `src/app/robots.ts` |
+| sitemap.xml | `src/app/sitemap.ts` |
+| OG画像 1200x630 | `python3 etl/make_og_image.py` → `web/public/og.png` |
+
+子ページで `openGraph` を書くと親の設定が丸ごと差し替わる。画像は毎回明示すること。
+`title` はテンプレート `%s | スムピタ` が効くので、ページ側にサイト名を書くと二重になる。
+
+**meta keywords はGoogleのランキングに影響しない**（2009年に公式に使用停止）。
+一部の検索エンジンや社内検索が読む程度の位置づけで置いている。順位を動かしたいなら本文を厚くするほうが確実。
+
+**現状の課題**: トップページはクローラが読める本文が1,409文字しかない。
+地図とスコアカードがクライアント描画のため、HTMLにはヘッダーとフッターの文章しか入らない。
+実質的な本文は `/criteria`（3,747文字）にある。
+効果が大きい順に、(1) 町丁目ごとの静的ページ3,142件、(2) トップに4軸の説明をサーバー側で描画。
+
 ### 地図について
 
 背景地図は[地理院タイル（淡色地図）](https://maps.gsi.go.jp/development/ichiran.html)。APIキー不要で出典表示のみで使えるが、
