@@ -30,19 +30,52 @@ web/                  Next.js フロントエンド（README は web/README.md�
 
 ## セットアップ
 
-Python 3.10以上が必要。**仮想環境を作って入れること。**
+Python 3.9以上。**仮想環境を作って入れること。**
+
+**有効化するスクリプトはシェルによって違う。** 間違えると仮想環境に入らないまま
+システムのPythonにインストールされてしまうので、自分のシェルを確認すること（`echo $SHELL`）。
 
 ```bash
+# bash / zsh（macOSの既定はzsh）
 python3 -m venv .venv
 source .venv/bin/activate
 python3 -m pip install -r requirements.txt
 ```
 
-以降このリポジトリで作業するときは、毎回 `source .venv/bin/activate` してから実行する。
-プロンプトの先頭に `(.venv)` が付いていれば有効になっている。抜けるときは `deactivate`。
+```fish
+# fish
+python3 -m venv .venv
+source .venv/bin/activate.fish
+python3 -m pip install -r requirements.txt
+```
+
+**有効化できたかは必ず確認する。**
+
+```bash
+python3 -c "import sys; print(sys.prefix)"
+# .../sumipita/.venv と出れば成功。/Applications/Xcode.app/... などが出たら失敗
+```
+
+プロンプトの先頭に `(.venv)` が付いていれば有効。抜けるときは `deactivate`。
+
+有効化が面倒なら、毎回フルパスで叩いてもよい。こちらは確実に仮想環境のPythonが使われる。
+
+```bash
+.venv/bin/python -m pip install -r requirements.txt
+.venv/bin/python etl/combine_scores.py
+```
 
 <details>
 <summary>うまくいかないとき</summary>
+
+**`Unsupported use of '='. In fish, please use 'set VIRTUAL_ENV ...'`**
+シェルが fish なのに bash用の `activate` を読んでいる。`activate.fish` を使う。
+このエラーが出たまま `pip install` すると、仮想環境に入らずシステムのPythonに入ってしまう。
+
+**`Defaulting to user installation because normal site-packages is not writeable`**
+仮想環境が有効になっていない証拠。上の確認コマンドで `sys.prefix` を見ること。
+インストール自体は `~/Library/Python/3.x/` に成功するので動きはするが、
+プロジェクトごとにバージョンを分けられなくなる。
 
 **`pip: command not found`**
 macOSに `pip` という名前のコマンドは無い。`python3 -m pip` を使う。
@@ -61,6 +94,11 @@ Pythonが入っていない。`brew install python@3.12` か
 **geopandasのインストールで失敗する**
 `python3 -m pip install --upgrade pip` でpipを新しくしてから再実行する。
 古いpipだとビルド済みのwheelを取りに行かず、ソースからのビルドに失敗することがある。
+
+**Xcode付属のPython 3.9が使われている**
+動作は確認済み（geopandas 1.0.1 / shapely 2.0.7 の組み合わせでETL全スクリプトが通る）。
+ただしPythonが古いと入るパッケージも古くなるので、可能なら
+`brew install python@3.12` を入れて `python3.12 -m venv .venv` で作り直すほうがよい。
 </details>
 
 ### 生データを `data/` に置く
