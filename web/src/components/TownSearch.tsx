@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { IndexEntry } from "@/lib/types";
 import { scoreColor } from "@/lib/axes";
 
@@ -61,6 +61,20 @@ export default function TownSearch({
 }) {
   const [q, setQ] = useState("");
   const [ward, setWard] = useState("");
+  // モバイルでは結果一覧をドロップダウンで出す。検索ボックス自体は常に最上部の固定サイズで、
+  // 一覧を出しても地図を押し下げないようにするため
+  const [open, setOpen] = useState(false);
+  const rootRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function onOutside(e: MouseEvent) {
+      if (rootRef.current && !rootRef.current.contains(e.target as Node)) {
+        setOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", onOutside);
+    return () => document.removeEventListener("mousedown", onOutside);
+  }, []);
 
   const normalized = useMemo(
     () => entries.map((e) => ({ e, n: normalize(e.ward + e.town) })),
@@ -78,21 +92,30 @@ export default function TownSearch({
       .map(({ e }) => e);
   }, [normalized, q, ward]);
 
+  const select = (key: string) => {
+    onSelect(key);
+    setOpen(false);
+  };
+
   return (
-    <div className="flex h-full flex-col">
-      <div className="space-y-2 p-3">
-        <p className="px-0.5 text-[11px] font-medium text-aqua-600">
+    <div ref={rootRef} className="relative lg:flex lg:h-full lg:flex-col">
+      <div className="space-y-2 p-3 lg:shrink-0">
+        <p className="hidden px-0.5 text-[11px] font-medium text-aqua-600 lg:block">
           気になっている街を入れてください
         </p>
         <input
           value={q}
           onChange={(e) => setQ(e.target.value)}
+          onFocus={() => setOpen(true)}
           placeholder="町丁目で検索（例: 三軒茶屋、芝浦2丁目）"
           className="w-full rounded-full border border-line bg-aqua-50/60 px-4 py-2 text-base outline-none transition-colors placeholder:text-muted/70 focus:border-aqua-500 focus:bg-white"
         />
-        <div className="flex flex-wrap gap-1">
+        <div className="hidden flex-wrap gap-1 lg:flex">
           <button
-            onClick={() => setWard("")}
+            onClick={() => {
+              setWard("");
+              setOpen(true);
+            }}
             className={`rounded-full px-2.5 py-1 text-[11px] transition-colors ${
               ward === ""
                 ? "bg-aqua-500 font-medium text-white"
@@ -104,7 +127,10 @@ export default function TownSearch({
           {wards.map((w) => (
             <button
               key={w}
-              onClick={() => setWard(w)}
+              onClick={() => {
+                setWard(w);
+                setOpen(true);
+              }}
               className={`rounded-full px-2.5 py-1 text-[11px] transition-colors ${
                 ward === w
                   ? "bg-aqua-500 font-medium text-white"
@@ -117,65 +143,73 @@ export default function TownSearch({
         </div>
       </div>
 
-      <div className="flex items-center justify-between px-4 pb-1.5 text-[10px] text-muted">
-        <span>
-          {results.length === 60 ? "上位60件" : `${results.length}件`}
-        </span>
-        <span
-          className="flex gap-1.5"
-          title="点線の枠は対象区域外またはデータなし"
-        >
-          <span className="w-9 text-center">治安</span>
-          <span className="w-9 text-center">洪水</span>
-          <span className="w-9 text-center">高潮</span>
-          <span className="w-9 text-center">地盤</span>
-        </span>
-      </div>
+      <div
+        className={`absolute inset-x-0 top-full z-30 mt-1.5 flex flex-col rounded-card border border-line bg-white shadow-card lg:static lg:mt-0 lg:flex-1 lg:overflow-hidden lg:rounded-none lg:border-0 lg:border-t lg:shadow-none ${
+          open ? "flex" : "hidden lg:flex"
+        }`}
+      >
+        <div className="flex items-center justify-between px-4 py-1.5 text-[10px] text-muted">
+          <span>
+            {results.length === 60 ? "上位60件" : `${results.length}件`}
+          </span>
+          <span
+            className="flex gap-1.5"
+            title="点線の枠は対象区域外またはデータなし"
+          >
+            <span className="w-9 text-center">治安</span>
+            <span className="w-9 text-center">洪水</span>
+            <span className="w-9 text-center">高潮</span>
+            <span className="w-9 text-center">地盤</span>
+          </span>
+        </div>
 
-      <ul className="flex-1 overflow-y-auto border-t border-line">
-        {results.map((e) => (
-          <li key={e.key}>
-            <button
-              onClick={() => onSelect(e.key)}
-              className={`flex w-full items-center gap-2 border-b border-line/70 px-4 py-2.5 text-left text-[13px] transition-colors ${
-                selectedKey === e.key
-                  ? "bg-aqua-100/80 font-medium"
-                  : "hover:bg-aqua-50"
-              }`}
-            >
-              <span className="min-w-0 flex-1 truncate">
-                <span className="mr-1 text-[11px] text-muted">{e.ward}</span>
-                {e.town}
-                {!e.scored && (
-                  <span className="ml-1.5 text-[10px] text-muted">
-                    （対象外）
+        <ul className="max-h-[60vh] overflow-y-auto border-t border-line lg:max-h-none lg:flex-1">
+          {results.map((e) => (
+            <li key={e.key}>
+              <button
+                onClick={() => select(e.key)}
+                className={`flex w-full items-center gap-2 border-b border-line/70 px-4 py-2.5 text-left text-[13px] transition-colors ${
+                  selectedKey === e.key
+                    ? "bg-aqua-100/80 font-medium"
+                    : "hover:bg-aqua-50"
+                }`}
+              >
+                <span className="min-w-0 flex-1 truncate">
+                  <span className="mr-1 text-[11px] text-muted">
+                    {e.ward}
                   </span>
-                )}
+                  {e.town}
+                  {!e.scored && (
+                    <span className="ml-1.5 text-[10px] text-muted">
+                      （対象外）
+                    </span>
+                  )}
+                </span>
+                <span className="flex shrink-0 gap-1.5">
+                  <MiniBar value={e.s} />
+                  <MiniBar value={e.f} />
+                  <MiniBar
+                    value={e.t}
+                    title={
+                      e.tide_scope ? "データなし" : "高潮浸水想定区域の対象外"
+                    }
+                  />
+                  <MiniBar value={e.g} />
+                </span>
+              </button>
+            </li>
+          ))}
+          {results.length === 0 && (
+            <li className="px-4 py-8 text-center text-sm text-muted">
+              見つかりませんでした。
+              <br />
+              <span className="text-[12px]">
+                「三軒茶屋」のように町名だけでも探せます
               </span>
-              <span className="flex shrink-0 gap-1.5">
-                <MiniBar value={e.s} />
-                <MiniBar value={e.f} />
-                <MiniBar
-                  value={e.t}
-                  title={
-                    e.tide_scope ? "データなし" : "高潮浸水想定区域の対象外"
-                  }
-                />
-                <MiniBar value={e.g} />
-              </span>
-            </button>
-          </li>
-        ))}
-        {results.length === 0 && (
-          <li className="px-4 py-8 text-center text-sm text-muted">
-            見つかりませんでした。
-            <br />
-            <span className="text-[12px]">
-              「三軒茶屋」のように町名だけでも探せます
-            </span>
-          </li>
-        )}
-      </ul>
+            </li>
+          )}
+        </ul>
+      </div>
     </div>
   );
 }

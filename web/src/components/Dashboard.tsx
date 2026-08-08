@@ -80,7 +80,7 @@ export default function Dashboard({ meta }: { meta: IndexFile }) {
       </header>
 
       <div className="flex flex-col gap-4 lg:flex-row">
-        <aside className="flex h-[400px] flex-col overflow-hidden rounded-card border border-line bg-white shadow-card lg:sticky lg:top-4 lg:h-[calc(100vh-2rem)] lg:w-[350px] lg:shrink-0">
+        <aside className="relative z-30 rounded-card border border-line bg-white shadow-card lg:sticky lg:top-4 lg:flex lg:h-[calc(100vh-2rem)] lg:w-[350px] lg:shrink-0 lg:flex-col lg:overflow-hidden">
           <TownSearch
             entries={meta.index}
             wards={meta.wards}
