@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="140" height="112" viewBox="0 0 140 112" fill="none">
+  <g transform="translate(44 0)">
+    <rect x="3" y="3" width="42" height="42" rx="13" stroke="#c3e9f2" stroke-width="2.5"></rect>
+    <path d="M24 9.5 L38 20 V36.5 a2.5 2.5 0 0 1 -2.5 2.5 H12.5 A2.5 2.5 0 0 1 10 36.5 V20 Z" fill="#2bb3cd"></path>
+    <rect x="19.5" y="27" width="9" height="12" rx="2.2" fill="#ffffff"></rect>
+  </g>
+  <text x="70" y="82" text-anchor="middle" font-family="&#39;Zen Maru Gothic&#39;,&#39;Hiragino Maru Gothic ProN&#39;,&#39;Hiragino Sans&#39;,&#39;Noto Sans JP&#39;,sans-serif" font-size="25" font-weight="700" letter-spacing="0.8" fill="#0f2c38">すむピタ</text>
+  <text x="70" y="99" text-anchor="middle" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" font-size="9" letter-spacing="2.6" fill="#5b7c88">SUMUPITA</text>
+</svg>

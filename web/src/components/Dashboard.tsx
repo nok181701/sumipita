@@ -3,6 +3,7 @@
 import dynamic from "next/dynamic";
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
+import Logo from "./Logo";
 import ScoreCard from "./ScoreCard";
 import TownSearch from "./TownSearch";
 import type { IndexFile, Town } from "@/lib/types";
@@ -60,8 +61,8 @@ export default function Dashboard({ meta }: { meta: IndexFile }) {
     <div className="mx-auto max-w-6xl px-4 pb-10 pt-6">
       <header className="mb-5">
         <div className="flex items-baseline gap-2.5">
-          <h1 className="text-[32px] font-bold leading-none tracking-tight text-aqua-700">
-            スムピタ
+          <h1>
+            <Logo size={32} />
           </h1>
           <span className="text-[12px] text-muted">東京23区・町丁目単位</span>
         </div>
