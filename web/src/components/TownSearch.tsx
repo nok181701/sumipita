@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { IndexEntry } from "@/lib/types";
 import { scoreColor } from "@/lib/axes";
@@ -165,13 +166,16 @@ export default function TownSearch({
 
         <ul className="max-h-[60vh] overflow-y-auto border-t border-line lg:max-h-none lg:flex-1">
           {results.map((e) => (
-            <li key={e.key}>
+            <li
+              key={e.key}
+              className={`flex items-stretch border-b border-line/70 ${
+                selectedKey === e.key ? "bg-aqua-100/80" : ""
+              }`}
+            >
               <button
                 onClick={() => select(e.key)}
-                className={`flex w-full items-center gap-2 border-b border-line/70 px-4 py-2.5 text-left text-[13px] transition-colors ${
-                  selectedKey === e.key
-                    ? "bg-aqua-100/80 font-medium"
-                    : "hover:bg-aqua-50"
+                className={`flex min-w-0 flex-1 items-center gap-2 px-4 py-2.5 text-left text-[13px] transition-colors ${
+                  selectedKey === e.key ? "font-medium" : "hover:bg-aqua-50"
                 }`}
               >
                 <span className="min-w-0 flex-1 truncate">
@@ -197,6 +201,16 @@ export default function TownSearch({
                   <MiniBar value={e.g} />
                 </span>
               </button>
+              {e.slug && (
+                <Link
+                  href={`/machi/${e.slug.wardSlug}/${e.slug.townSlug}`}
+                  title={`${e.ward}${e.town}の詳細ページを開く`}
+                  aria-label={`${e.ward}${e.town}の詳細ページを開く`}
+                  className="flex shrink-0 items-center px-3 text-muted transition-colors hover:bg-aqua-50 hover:text-aqua-600"
+                >
+                  →
+                </Link>
+              )}
             </li>
           ))}
           {results.length === 0 && (

@@ -56,6 +56,12 @@ export const SOURCES: IndexFile["sources"] = [
     url: "https://www.e-stat.go.jp/gis/statmap-search?type=2",
     license: "CC BY 4.0",
   },
+  {
+    id: "geolonia_addresses",
+    name: "Geolonia「日本の住所データ」（国土交通省 位置参照情報がもと）",
+    url: "https://github.com/geolonia/japanese-addresses",
+    license: "CC BY 4.0",
+  },
 ];
 
 async function db() {

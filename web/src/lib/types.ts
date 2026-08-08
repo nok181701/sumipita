@@ -117,6 +117,8 @@ export type IndexEntry = {
   /** ポリゴン重心。ポリゴン未対応の3件（江東区海の森）は null */
   lat: number | null;
   lng: number | null;
+  /** /machi/[ward]/[town] のパス。対応表に無ければ null */
+  slug: { wardSlug: string; townSlug: string } | null;
 };
 
 export type Source = {

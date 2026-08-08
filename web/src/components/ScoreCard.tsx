@@ -249,7 +249,15 @@ function Elevation({ town }: { town: Town }) {
   );
 }
 
-export default function ScoreCard({ town }: { town: Town }) {
+export default function ScoreCard({
+  town,
+  headingLevel = "h2",
+}: {
+  town: Town;
+  /** ページ内で唯一のh1にすべき場所（例: 町丁目詳細ページ）ではh1を渡す */
+  headingLevel?: "h1" | "h2";
+}) {
+  const Heading = headingLevel;
   const views = buildAxisViews(town);
   const typhoon = typhoonSpecific(town);
   const best = views.filter((v) => v.score !== null && v.score >= 70);
@@ -261,10 +269,10 @@ export default function ScoreCard({ town }: { town: Town }) {
   return (
     <section className="rounded-card border border-line bg-white p-5 shadow-card">
       <header className="mb-3">
-        <h2 className="mt-0.5 text-2xl font-bold tracking-tight">
+        <Heading className="mt-0.5 text-2xl font-bold tracking-tight">
           {town.ward}
           <span className="text-aqua-700">{town.town}</span>
-        </h2>
+        </Heading>
         <p className="mt-1 text-[12px] text-muted">
           いま {town.pop?.toLocaleString() ?? "—"}人 ・{" "}
           {town.households?.toLocaleString() ?? "—"}世帯が暮らしています
