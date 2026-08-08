@@ -10,6 +10,7 @@ const logoFont = Zen_Maru_Gothic({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL("https://sumipita.com"),
   title: {
     default: "スムピタ — 引越し先の街を、決める前に確かめる",
     template: "%s | スムピタ",
