@@ -44,7 +44,7 @@ npm run dev
 
 ## データを更新する
 
-スコア・生データを変えたときだけ。**2ステップとも必要**（片方だけだとトップページと町丁目詳細ページでスコアが食い違う。理由は下記）。
+スコア・生データを変えたときだけ。**3ステップとも必要**（片方だけだとページ間でスコアが食い違う。理由は下記）。
 
 ```bash
 python3 etl/export_d1.py --rebuild
@@ -54,34 +54,47 @@ git commit -m "データ更新"
 git push
 ```
 
-1. **push**: `deploy.yml`が自動で走り、ビルド前に`seed/data.sql`をビルド用のローカルD1へ読み込んでから
-   `/machi/[ward]/[town]`（3,142ページ）を新しいスコアで静的（SSG）に作り直し、R2キャッシュへ書き込む。
+1. **push**: `deploy.yml`が自動で走り、コードをデプロイする（`/machi/[ward]/[town]`は再生成しない）。
 2. **Load D1 Data**: GitHubの**Actions → Load D1 Data → Run workflow**から手動実行し、
-   本番のRemote D1にも同じデータを入れる（`load-data.yml`が`migrations/0001_init.sql`で
-   スキーマを揃えたあと`seed/data.sql`を投入）。トップページ（`/`）と`/api/town`はここを見ている。
+   本番のRemote D1にデータを入れる（`load-data.yml`が`migrations/0001_init.sql`でスキーマを揃えたあと
+   `seed/data.sql`を投入）。トップページ（`/`）と`/api/town`はここを見ている。
+3. **Populate Machi Cache**: GitHubの**Actions → Populate Machi Cache → Run workflow**から手動実行し、
+   `/machi/[ward]/[town]`（3,142ページ）を新しいスコアで作り直してRemote R2キャッシュへ書き込む
+   （`populate-machi-cache.yml`）。
 
 自動投入にしていないのは、DBが一時的に使用不可になるうえ、スコア再計算時以外は流す必要が無いため。
 
 ## デプロイ
 
 Cloudflare Workers に [OpenNext](https://opennext.js.org/cloudflare) で載せる。
-main への push で 型チェック → ローカルD1へのseed投入 → ビルド → D1マイグレーション適用 → デプロイ が自動で走る（`.github/workflows/deploy.yml`）。
+main への push で 型チェック → ビルド → D1マイグレーション適用 → デプロイ が自動で走る（`.github/workflows/deploy.yml`）。
 ここでの「D1マイグレーション適用」は新規セットアップ用で、既存カラムの追加などスキーマ変更は
 反映されない（上記の理由）。スキーマ変更はLoad D1 Dataの手動実行で行う。
 
 トップページ（`/`）と`/api/town`はスコア・犯罪件数・ハザード値を**Remote D1から毎リクエストSSRで参照**する。
-`/machi/[ward]/[town]`（町丁目詳細ページ）は**ビルド時に`seed/data.sql`から静的HTML（SSG）として生成**し、
-デプロイ時にR2（`open-next.config.ts`のincrementalCache、`wrangler.jsonc`の`NEXT_INC_CACHE_R2_BUCKET`）へ
-書き込んでいる。実行時にD1へは触れない。地図のポリゴンは静的アセット。
+`/machi/[ward]/[town]`（町丁目詳細ページ）はR2（`open-next.config.ts`のincrementalCache、`wrangler.jsonc`の
+`NEXT_INC_CACHE_R2_BUCKET`）をキャッシュとして使う。ただし**通常の`deploy.yml`ではこのキャッシュを作らない**
+（`generateStaticParams`は`POPULATE_MACHI_CACHE=1`が付いているときだけ全件を返し、通常ビルドでは空リスト。
+コードのpushのたびにD1へ3,142回問い合わせるのを避けるため）。空リストでも`dynamicParams: true`なので、
+アクセス時にD1から生成してそのままR2へ積まれる（本来のISRのフォールバック動作）。データ更新時に
+まとめて生成しておきたい場合は`populate-machi-cache.yml`を手動実行する。地図のポリゴンは静的アセット。
 
 （一度R2/KVの設定を忘れてSSG化し、本番で全ページ404にした。デプロイ後は
 `curl -I` で `x-nextjs-cache: HIT` になっているか必ず確認すること。）
 
-**R2キャッシュはデプロイのたびに増える**（NextのビルドIDがキーに含まれるため、毎回上書きではなく
-新規追加。旧ビルド分は二度と参照されない孤児オブジェクトとして残る）。無限に溜まらないよう
+**ビルドIDを固定してある**（`next.config.mjs`の`generateBuildId`）。R2キャッシュのキーにビルドIDが
+入るため、固定しないと通常のコードデプロイのたびに参照先が変わり、それまでのキャッシュが
+（`populate-machi-cache.yml`で作ったものも含めて）読めなくなる。変更する場合は
+`populate-machi-cache.yml`を再実行すること。
+
+**それでもR2キャッシュはpopulate/フォールバック生成のたびに増える**（同じビルドID内では基本的に
+同じキーに上書きされるはずだが、ビルドIDを変えたときや検証時は積み上がる）。無限に溜まらないよう
 `sumipita-cache`バケットに90日で自動削除のライフサイクルルールを設定済み
 （`wrangler r2 bucket lifecycle add sumipita-cache expire-old-cache --expire-days 90`。
 コードには残らない設定なので、バケットを作り直した場合はこのコマンドを再実行すること）。
+
+`populate-machi-cache.yml`のRemote R2書き込みには、`CLOUDFLARE_API_TOKEN`にR2の編集権限が必要
+（無いと`403 Authentication error`で失敗する。実際に一度これで失敗している）。
 
 ローカルで本番相当を見る: `cd web && npm run preview`
 

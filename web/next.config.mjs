@@ -6,6 +6,13 @@ const nextConfig = {
   experimental: {
     cpus: 1,
   },
+  // ビルドIDを固定する。デフォルトは毎ビルドでランダムな値になり、それがR2の
+  // incremental cacheのキー（prefix/buildId/hash）に入るため、固定しないと
+  // 通常のコードpushのたびにキャッシュの参照先が変わって404の原因になる
+  // （populate-machi-cache.ymlで書き込んだキャッシュも通常deployで読めなくなる）。
+  // 変更すると既存のR2キャッシュが全部読めなくなるので、変えるときは
+  // populate-machi-cache.ymlを再実行すること。
+  generateBuildId: async () => "machi-cache-v1",
 };
 
 export default nextConfig;

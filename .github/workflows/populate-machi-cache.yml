@@ -1,0 +1,44 @@
+name: Populate Machi Cache
+
+# /machi/[ward]/[town]（3,142ページ）を全件ビルドしてRemote R2の
+# incremental cacheへ書き込む。データ更新（seed/data.sqlの更新）後に手動で実行する。
+#
+# 通常のdeploy.yml（コードのpushのたび）ではこれをやらない。ビルドID
+# （next.config.mjs の generateBuildId）を固定してあるので、ここで書いた
+# キャッシュは通常デプロイをまたいでそのまま生き続ける。
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  populate:
+    runs-on: ubuntu-latest
+    name: Populate Machi Cache
+    defaults:
+      run:
+        working-directory: web
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 22
+      - name: Install dependencies
+        run: npm ci
+      - name: Seed local D1 for build
+        # ビルド中に /machi/[ward]/[town] の全件をD1に問い合わせて生成するため、
+        # ここだけの使い捨てローカルD1にseed/data.sqlを流し込んでおく
+        # （本番Remote D1には触れない）。
+        run: |
+          npx wrangler d1 execute sumipita --local --file=migrations/0001_init.sql
+          npx wrangler d1 execute sumipita --local --file=seed/data.sql
+      - name: Build with full machi SSG
+        run: npx opennextjs-cloudflare build
+        env:
+          POPULATE_MACHI_CACHE: "1"
+      - name: Populate remote R2 cache
+        run: npx opennextjs-cloudflare populateCache remote
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}

@@ -50,11 +50,15 @@ function buildJsonLd(data: Town, ward: string, town: string) {
   return [place, breadcrumb];
 }
 
-// 町丁目は年1回のデータ更新以外で増減しないので、ビルド時に全件静的出力する。
-// R2（open-next.config.ts の incrementalCache）にビルド時生成したHTMLをデプロイ時に
-// 書き込むことで配信する。CIでは `Build` の前にローカルD1へ seed/data.sql を
-// 流し込んでいる（deploy.yml の "Seed local D1 for build" ステップ、本番Remote D1には触れない）。
+// 町丁目は年1回のデータ更新以外で増減しないので、本来は全件静的出力したいが、
+// 毎回のコードpushでD1に3,142回問い合わせるのは無駄なので、通常ビルドでは
+// 空リストを返す（＝何も事前生成しない）。データ更新時だけ
+// POPULATE_MACHI_CACHE=1 を付けてビルドし（.github/workflows/populate-machi-cache.yml）、
+// 全件を生成してRemote R2（open-next.config.ts の incrementalCache）へ書き込む。
+// dynamicParams=true なので、まだキャッシュに無いページはアクセス時にD1へ
+// 問い合わせて生成し、そのままR2に積まれる（本来のISRのフォールバック動作）。
 export function generateStaticParams() {
+  if (process.env.POPULATE_MACHI_CACHE !== "1") return [];
   return Object.entries(machiSlugs.townSlug).map(([key, townSlug]) => {
     const ward = key.split("|")[0];
     const wardSlug = (machiSlugs.wardSlug as Record<string, string>)[ward];
@@ -62,8 +66,7 @@ export function generateStaticParams() {
   });
 }
 
-// 上記で全件列挙しているので、未列挙のパスは即404にする
-export const dynamicParams = false;
+export const dynamicParams = true;
 
 type Params = { ward: string; town: string };
 
