@@ -148,22 +148,7 @@ export async function loadIndex(): Promise<IndexFile> {
 
 type TownRow = Record<string, unknown>;
 
-/** 町丁目1件の詳細。スコアの根拠になる生値まで含める */
-export async function loadTown(key: string): Promise<Town | null> {
-  const r = await (await db())
-    .prepare(
-      `SELECT t.*, s.*, c.*, h.*
-         FROM towns t
-         JOIN town_scores   s ON s.key = t.key AND s.data_year = ?2
-         JOIN crime_counts  c ON c.key = t.key AND c.data_year = ?2
-         JOIN hazard_details h ON h.key = t.key AND h.data_year = ?2
-        WHERE t.key = ?1`,
-    )
-    .bind(key, DATA_YEAR)
-    .first<TownRow>();
-
-  if (!r) return null;
-
+function rowToTown(r: TownRow): Town {
   return {
     key: String(r.key),
     ward: String(r.ward),
@@ -238,4 +223,33 @@ export async function loadTown(key: string): Promise<Town | null> {
       nat_rivers: (r.nat_rivers as string) ?? null,
     },
   };
+}
+
+const TOWN_QUERY = `SELECT t.*, s.*, c.*, h.*
+         FROM towns t
+         JOIN town_scores   s ON s.key = t.key AND s.data_year = ?1
+         JOIN crime_counts  c ON c.key = t.key AND c.data_year = ?1
+         JOIN hazard_details h ON h.key = t.key AND h.data_year = ?1`;
+
+/** 町丁目1件の詳細。スコアの根拠になる生値まで含める */
+export async function loadTown(key: string): Promise<Town | null> {
+  const r = await (await db())
+    .prepare(`${TOWN_QUERY} WHERE t.key = ?2`)
+    .bind(DATA_YEAR, key)
+    .first<TownRow>();
+
+  return r ? rowToTown(r) : null;
+}
+
+/**
+ * 全町丁目の詳細を1クエリでまとめて取る。
+ *
+ * /machi/[ward]/[town] のSSG全件ビルド（populate-machi-cache.yml）専用。
+ * 3,142件を1件ずつloadTownで問い合わせると、ローカルD1（miniflareのシミュレータ）が
+ * 同時アクセスに耐えられず "database is locked: SQLITE_BUSY" で落ちるため、
+ * 1回のクエリで全部取ってメモリ上のMapから引く形にしている。
+ */
+export async function loadAllTowns(): Promise<Map<string, Town>> {
+  const rows = await (await db()).prepare(TOWN_QUERY).bind(DATA_YEAR).all<TownRow>();
+  return new Map(rows.results.map((r: TownRow) => [String(r.key), rowToTown(r)]));
 }

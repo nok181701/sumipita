@@ -3,7 +3,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import Logo from "@/components/Logo";
 import ScoreCard from "@/components/ScoreCard";
-import { loadTown } from "@/server/db";
+import { loadTown, loadAllTowns } from "@/server/db";
 import { keyFromSlugs } from "@/lib/machiSlugs";
 import machiSlugs from "@/lib/machiSlugs.json";
 import { buildAxisViews } from "@/lib/axes";
@@ -70,9 +70,21 @@ export const dynamicParams = true;
 
 type Params = { ward: string; town: string };
 
+// POPULATE_MACHI_CACHE=1 の全件ビルド時だけ使う、1回きりの全件取得。
+// 3,142件それぞれが個別にD1へ問い合わせると、ローカルD1（miniflareのシミュレータ）が
+// 同時アクセスに耐えられず "database is locked: SQLITE_BUSY" で落ちるため、
+// 1クエリでまとめて取ってメモリ上から引く（cpus:1で同一プロセス内に収まる前提）。
+let allTownsPromise: ReturnType<typeof loadAllTowns> | null = null;
+
 async function getTown({ ward, town }: Params) {
   const key = keyFromSlugs(ward, town);
   if (!key) return null;
+
+  if (process.env.POPULATE_MACHI_CACHE === "1") {
+    if (!allTownsPromise) allTownsPromise = loadAllTowns();
+    return (await allTownsPromise).get(key) ?? null;
+  }
+
   return loadTown(key);
 }
 
