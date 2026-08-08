@@ -316,10 +316,6 @@ export default function MapView({
         ))}
       </div>
 
-      <p className="px-4 text-[12px] leading-snug text-muted">
-        地図をクリックすると下に詳しく出ます。
-      </p>
-
       {/* 「この点数は何を数えているのか」への導線。
           スコアだけ見せて根拠が辿れないと、信じるか無視するかの二択になってしまう */}
       <div className="flex flex-wrap items-center gap-x-1 gap-y-1 px-4 pb-2.5 pt-2 text-[11.5px]">
@@ -390,9 +386,15 @@ export default function MapView({
         <strong className="font-semibold text-ink">
           「調査の対象外、またはデータが存在しない」
         </strong>
-        という意味です。安全が確認された場所ではないので、色がついている町丁目と同じ土俵で比べないでください。
-        高潮は世田谷・渋谷・中野・杉並・豊島・練馬の6区がそもそも想定区域の対象外、
-        地盤はボーリング調査の地点が1つもない456町丁目が該当します。
+        という意味です（安全という意味ではありません）。
+        <a
+          href={`/criteria#${CRITERIA_ANCHOR(axis)}`}
+          target="_blank"
+          rel="noreferrer noopener"
+          className="ml-1 underline decoration-aqua-200 underline-offset-2 hover:text-aqua-600"
+        >
+          詳しく→
+        </a>
       </p>
     </section>
   );

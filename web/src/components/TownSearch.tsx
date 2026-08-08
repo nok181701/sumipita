@@ -99,7 +99,7 @@ export default function TownSearch({
 
   return (
     <div ref={rootRef} className="relative lg:flex lg:h-full lg:flex-col">
-      <div className="space-y-2 p-3 lg:shrink-0">
+      <div className="flex flex-col gap-2 p-3 lg:shrink-0">
         <p className="hidden px-0.5 text-[11px] font-medium text-aqua-600 lg:block">
           気になっている街を入れてください
         </p>

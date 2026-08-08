@@ -59,23 +59,25 @@ export default function Dashboard({ meta }: { meta: IndexFile }) {
 
   return (
     <div className="mx-auto max-w-6xl px-4 pb-10 pt-6">
-      <header className="mb-5">
+      <header className="mb-4">
         <div className="flex items-baseline gap-2.5">
           <h1>
             <Logo size={32} />
           </h1>
           <span className="text-[12px] text-muted">東京23区・町丁目単位</span>
         </div>
-        <p className="mt-2 max-w-2xl text-[13.5px] leading-relaxed">
+        <p className="mt-2 max-w-2xl text-[13.5px] leading-relaxed lg:hidden">
+          引越し先を決める前に、
+          <strong className="font-semibold">治安・洪水・高潮・地盤</strong>
+          を公的データで町丁目ごとにサクッと確認できます。
+        </p>
+        <p className="mt-2 hidden max-w-2xl text-[13.5px] leading-relaxed lg:block">
           治安、洪水、高潮、地盤を町丁目ごとに調べました。
           <br />
           引越しなどで住居先を決める前に、ここでサクッと確認できます。
           <strong className="font-semibold">治安・洪水・高潮・地盤</strong>
           の4つを、 公的データから町丁目ごとに出しました。
           <br />
-          <span className="text-muted">
-            候補が絞れてきたら、決める前にここで一度確かめてみてください。
-          </span>
         </p>
       </header>
 
