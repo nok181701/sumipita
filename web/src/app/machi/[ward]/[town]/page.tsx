@@ -5,7 +5,6 @@ import Logo from "@/components/Logo";
 import ScoreCard from "@/components/ScoreCard";
 import { loadTown } from "@/server/db";
 import { keyFromSlugs } from "@/lib/machiSlugs";
-import machiSlugs from "@/lib/machiSlugs.json";
 import { buildAxisViews } from "@/lib/axes";
 import type { Town } from "@/lib/types";
 
@@ -50,19 +49,12 @@ function buildJsonLd(data: Town, ward: string, town: string) {
   return [place, breadcrumb];
 }
 
-// 町丁目は年1回のデータ更新以外で増減しないので、ビルド時に全件静的出力する。
-// CIでは `Build` の前にローカルD1へ seed/data.sql を流し込んでいる
-// （deploy.yml の "Seed local D1 for build" ステップ）。本番Remote D1には触れない。
-export function generateStaticParams() {
-  return Object.entries(machiSlugs.townSlug).map(([key, townSlug]) => {
-    const ward = key.split("|")[0];
-    const wardSlug = (machiSlugs.wardSlug as Record<string, string>)[ward];
-    return { ward: wardSlug, town: townSlug };
-  });
-}
-
-// 上記で全件列挙しているので、未列挙のパスは（あり得ないが）即404にする
-export const dynamicParams = false;
+// SSG（generateStaticParams）を試したが、OpenNextのCloudflareアダプタはR2/KVの
+// incremental cache bindingが無いと事前生成したページの中身をどこにもデプロイしない
+// （ビルドログの "Incremental cache does not need populating" がそれ）。
+// dynamicParams=falseと組み合わせた結果、本番で全ページ404になった。要R2/KV設定。
+// それまではforce-dynamicに戻す。
+export const dynamic = "force-dynamic";
 
 type Params = { ward: string; town: string };
 

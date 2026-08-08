@@ -1,11 +1,6 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
-  // /machi/[ward]/[town] を3,142件 generateStaticParams で並列にビルドすると
-  // ローカルD1（miniflareのシミュレータ）が同時アクセスに耐えられず落ちるため、直列にする。
-  experimental: {
-    cpus: 1,
-  },
 };
 
 export default nextConfig;
