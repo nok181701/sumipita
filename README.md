@@ -44,7 +44,7 @@ npm run dev
 
 ## データを更新する
 
-スコア・生データを変えたときだけ。
+スコア・生データを変えたときだけ。**2ステップとも必要**（片方だけだとトップページと町丁目詳細ページでスコアが食い違う。理由は下記）。
 
 ```bash
 python3 etl/export_d1.py --rebuild
@@ -54,20 +54,28 @@ git commit -m "データ更新"
 git push
 ```
 
-スキーマもデータも自動投入せず、GitHubの**Actions → Load D1 Data → Run workflow** から手動実行する
-（`load-data.yml` が `migrations/0001_init.sql` を直接流してスキーマを揃えたあと、`seed/data.sql` を投入する）。
+1. **push**: `deploy.yml`が自動で走り、ビルド前に`seed/data.sql`をビルド用のローカルD1へ読み込んでから
+   `/machi/[ward]/[town]`（3,142ページ）を新しいスコアで静的（SSG）に作り直し、R2キャッシュへ書き込む。
+2. **Load D1 Data**: GitHubの**Actions → Load D1 Data → Run workflow**から手動実行し、
+   本番のRemote D1にも同じデータを入れる（`load-data.yml`が`migrations/0001_init.sql`で
+   スキーマを揃えたあと`seed/data.sql`を投入）。トップページ（`/`）と`/api/town`はここを見ている。
+
+自動投入にしていないのは、DBが一時的に使用不可になるうえ、スコア再計算時以外は流す必要が無いため。
 
 ## デプロイ
 
 Cloudflare Workers に [OpenNext](https://opennext.js.org/cloudflare) で載せる。
-main への push で 型チェック → ビルド → D1マイグレーション適用 → デプロイ が自動で走る（`.github/workflows/deploy.yml`）。
+main への push で 型チェック → ローカルD1へのseed投入 → ビルド → D1マイグレーション適用 → デプロイ が自動で走る（`.github/workflows/deploy.yml`）。
 ここでの「D1マイグレーション適用」は新規セットアップ用で、既存カラムの追加などスキーマ変更は
 反映されない（上記の理由）。スキーマ変更はLoad D1 Dataの手動実行で行う。
 
-スコア・犯罪件数・ハザード値は **D1**（毎リクエストSSRで参照）、地図のポリゴンは静的アセット。
-`/machi/[ward]/[town]`（町丁目詳細ページ）もSSGを試したが、OpenNextのCloudflareアダプタは
-R2/KVのincremental cache bindingが無いと事前生成したページを配信できず本番で404になったため、
-他ページと同じくforce-dynamicに戻してある。SSG化するにはR2/KVの設定が前提。
+トップページ（`/`）と`/api/town`はスコア・犯罪件数・ハザード値を**Remote D1から毎リクエストSSRで参照**する。
+`/machi/[ward]/[town]`（町丁目詳細ページ）は**ビルド時に`seed/data.sql`から静的HTML（SSG）として生成**し、
+デプロイ時にR2（`open-next.config.ts`のincrementalCache、`wrangler.jsonc`の`NEXT_INC_CACHE_R2_BUCKET`）へ
+書き込んでいる。実行時にD1へは触れない。地図のポリゴンは静的アセット。
+
+（一度R2/KVの設定を忘れてSSG化し、本番で全ページ404にした。デプロイ後は
+`curl -I` で `x-nextjs-cache: HIT` になっているか必ず確認すること。）
 
 ローカルで本番相当を見る: `cd web && npm run preview`
 

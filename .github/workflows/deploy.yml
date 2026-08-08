@@ -28,6 +28,13 @@ jobs:
         run: npm ci
       - name: Typecheck
         run: npx tsc --noEmit
+      - name: Seed local D1 for build
+        # /machi/[ward]/[town] を generateStaticParams でビルド時に静的出力するため、
+        # ビルド中にD1を問い合わせる（本番Remote D1には繋がらないので、ここだけの
+        # 使い捨てローカルD1にseed/data.sqlを流し込んでおく）。
+        run: |
+          npx wrangler d1 execute sumipita --local --file=migrations/0001_init.sql
+          npx wrangler d1 execute sumipita --local --file=seed/data.sql
       - name: Build
         run: npx opennextjs-cloudflare build
       - name: Apply D1 migrations

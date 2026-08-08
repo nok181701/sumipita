@@ -25,6 +25,15 @@
     }
   ],
 
+  // /machi/[ward]/[town] のSSGページ本体（incremental cache）の保存先。
+  // binding名 NEXT_INC_CACHE_R2_BUCKET は @opennextjs/cloudflare 側の固定名。
+  "r2_buckets": [
+    {
+      "binding": "NEXT_INC_CACHE_R2_BUCKET",
+      "bucket_name": "sumipita-cache"
+    }
+  ],
+
   "observability": {
     "enabled": true
   }
