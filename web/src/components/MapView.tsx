@@ -300,6 +300,9 @@ export default function MapView({
 
   return (
     <section className="overflow-hidden rounded-card border border-line bg-white shadow-card">
+      <p className="px-2.5 pt-2.5 text-[11.5px] font-medium text-aqua-600">
+        4つの軸を切り替えて地図の色分けを見られます。
+      </p>
       <div className="flex flex-wrap items-center gap-1.5 p-2.5">
         {AXES.map((a) => (
           <button
