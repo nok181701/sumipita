@@ -3,6 +3,16 @@ name: Load D1 Data
 # スコアを再計算して web/seed/data.sql をコミットした後、手動で実行する。
 # push トリガーにしていないのは、データ投入がDBを一時的に使用不可にするうえ
 # 頻度も低い(スコア再計算時のみ)ため。詳細はREADMEの「データを更新する」参照。
+#
+# 【スキーマも毎回ここで流し直す】
+# migrations/0001_init.sql は make_schema.py が CSV から毎回まるごと作り直す
+# 1本のファイル（同じファイル名）。D1のマイグレーションはファイル名ベースで
+# 1回きり実行の仕組みなので、deploy.yml の `d1 migrations apply` は
+# 「適用済み」として2回目以降スキップしてしまい、列を追加してもリモートの
+# スキーマが更新されない（実際に flood_basin 列追加時にこれで失敗した）。
+# ここで直接 `d1 execute --file=migrations/0001_init.sql` を流すことで、
+# 常に最新のCSV由来スキーマに揃える。DROP TABLE を含むが、直後に全件を
+# 入れ直すのでデータは失われない。
 on:
   workflow_dispatch:
 
@@ -15,6 +25,13 @@ jobs:
     name: Load D1 Data
     steps:
       - uses: actions/checkout@v6
+      - name: Apply schema to D1
+        uses: cloudflare/wrangler-action@v4
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          workingDirectory: web
+          command: d1 execute sumipita --remote --file=migrations/0001_init.sql
       - name: Load seed data into D1
         uses: cloudflare/wrangler-action@v4
         with:
