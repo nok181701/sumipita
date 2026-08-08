@@ -159,7 +159,7 @@ export default function TownSearch({
             <span className="w-9 text-center">治安</span>
             <span className="w-9 text-center">洪水</span>
             <span className="w-9 text-center">高潮</span>
-            <span className="w-9 text-center">地盤</span>
+            <span className="w-9 text-center">液状化</span>
           </span>
         </div>
 

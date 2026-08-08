@@ -198,7 +198,7 @@ export const CRITERIA = [
   {
     id: "ground",
     scored: true,
-    label: "地盤",
+    label: "地盤（液状化）",
     summary:
       "地震のときに足元の土が液状化しないか、です。埋立地や昔の川筋のように、砂と水を含んだゆるい地盤ほど低得点になります。",
     source: {

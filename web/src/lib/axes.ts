@@ -41,7 +41,7 @@ export const AXES: {
   },
   {
     id: "ground",
-    label: "地盤",
+    label: "地盤（液状化）",
     unit: "ボーリング調査によるPL判定",
     what:
       "「東京の液状化予測図」のもとになっているボーリング地点の液状化判定（PL値）を、" +
@@ -241,7 +241,7 @@ export function buildAxisViews(t: Town): AxisView[] {
       : "scored";
   const ground: AxisView = {
     id: "ground",
-    label: "地盤",
+    label: "地盤（液状化）",
     score: groundStatus === "scored" ? scores.ground : null,
     status: groundStatus,
     statusNote:
@@ -262,11 +262,6 @@ export function buildAxisViews(t: Town): AxisView[] {
               ? "この町丁目のボーリング地点は2本以下です。1〜2本が町全体を代表しているとは限らないので、点数は参考程度に見てください。"
               : null,
     evidence: [
-      { label: "ボーリング地点数", value: int(hazard.liq_points, " 地点") },
-      { label: "液状化の可能性 大", value: int(hazard.liq_large, " 地点") },
-      { label: "同 中", value: int(hazard.liq_mid, " 地点") },
-      { label: "同 小", value: int(hazard.liq_small, " 地点") },
-      { label: "PL値（平滑化後）", value: fmt(hazard.liq_pl, 1) },
       {
         label: "過去の液状化",
         value: flags.liq_1923
@@ -277,6 +272,11 @@ export function buildAxisViews(t: Town): AxisView[] {
               ? "記録あり"
               : "記録なし",
       },
+      { label: "液状化の可能性 大", value: int(hazard.liq_large, " 地点") },
+      { label: "液状化の可能性 中", value: int(hazard.liq_mid, " 地点") },
+      { label: "液状化の可能性 小", value: int(hazard.liq_small, " 地点") },
+      { label: "PL値（平滑化後）", value: fmt(hazard.liq_pl, 1) },
+      { label: "ボーリング地点数", value: int(hazard.liq_points, " 地点") },
     ],
   };
 
