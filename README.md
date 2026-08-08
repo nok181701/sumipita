@@ -77,5 +77,11 @@ main への push で 型チェック → ローカルD1へのseed投入 → ビ�
 （一度R2/KVの設定を忘れてSSG化し、本番で全ページ404にした。デプロイ後は
 `curl -I` で `x-nextjs-cache: HIT` になっているか必ず確認すること。）
 
+**R2キャッシュはデプロイのたびに増える**（NextのビルドIDがキーに含まれるため、毎回上書きではなく
+新規追加。旧ビルド分は二度と参照されない孤児オブジェクトとして残る）。無限に溜まらないよう
+`sumipita-cache`バケットに90日で自動削除のライフサイクルルールを設定済み
+（`wrangler r2 bucket lifecycle add sumipita-cache expire-old-cache --expire-days 90`。
+コードには残らない設定なので、バケットを作り直した場合はこのコマンドを再実行すること）。
+
 ローカルで本番相当を見る: `cd web && npm run preview`
 
