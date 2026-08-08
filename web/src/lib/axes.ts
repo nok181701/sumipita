@@ -115,6 +115,50 @@ export function buildAxisViews(t: Town): AxisView[] {
     : !flags.flood_covered
       ? "no_data"
       : "scored";
+
+  // 荒川・多摩川・江戸川のほうが東京都データより深く、実際にスコアを決めているときは、
+  // evidence の「主な要因」も国管理河川側に揃える。東京都の7流域データ（flood_basin）は
+  // この場合スコアには関与していないので、そちらを出すと説明文と矛盾する。
+  const decidedByNationalRiver =
+    flags.national_river && hazard.flood_source === "国管理河川";
+
+  // 浸水想定の主な要因（流域名）は、点数が良い町丁目にまで出すと「大した想定でも
+  // ないのに川の名前を出された」という違和感になる。要注意な町丁目（30点台まで）
+  // に絞って出す。
+  const showBasinFactor =
+    floodStatus === "scored" &&
+    !decidedByNationalRiver &&
+    scores.flood !== null &&
+    scores.flood < 40 &&
+    !!hazard.flood_basin;
+
+  // 「この点数は主に〜によるものです」という因果の言い切りはしない。
+  // 流域データは外水氾濫・内水氾濫の両方を合成した想定なので、「主因は〜」と
+  // 名指しすると内水（下水の容量超過）の寄与を実態より軽く見せてしまう。
+  // あくまで「この区域はどの図の想定区域に入っているか」という事実として書く。
+  const basinNote = showBasinFactor
+    ? (() => {
+        // flood_basins は "|" 区切り。流域ラベル自体に「・」を含むものがあるため
+        // （中川・綾瀬川流域 など）、それとかぶらない区切り文字にしてある。
+        const others = (hazard.flood_basins ?? "")
+          .split("|")
+          .filter((b) => b && b !== hazard.flood_basin);
+        const extra =
+          others.length > 0
+            ? `ほかに${others.join("・")}の想定区域も一部にかかっています。`
+            : "";
+        return `この区域は${hazard.flood_basin}の浸水想定区域に入っています（区域内の想定区域のうち${pct(hazard.flood_basin_ratio)}を占めます）。${extra}`;
+      })()
+    : "";
+
+  // 「洪水・内水」という軸名なのに、点数が良いと内水（下水があふれて道路が
+  // 冠水すること）の説明が一度も出ないままになる。点数によらず全員に一言で
+  // 伝えるため、東京都データが根拠のケースでは毎回この一文を先頭に置く。
+  // （荒川等の国管理河川データは外水氾濫のみで内水を含まないため、
+  // decidedByNationalRiver の分岐にはこの一文を入れない）
+  const uchimizuNote =
+    "この点数は、川があふれる外水氾濫と、下水があふれて道路が冠水する内水氾濫の両方を含む想定です。";
+
   const flood: AxisView = {
     id: "flood",
     label: "洪水・内水",
@@ -125,22 +169,37 @@ export function buildAxisViews(t: Town): AxisView[] {
         ? "浸水予想区域図の対象流域から外れていて、そもそもデータがありません。安全だと確認できたわけではありません。"
         : floodStatus === "not_scored"
           ? "住んでいる人が100人未満の町丁目なので、スコアは出していません。"
-          : flags.national_river && hazard.flood_source === "国管理河川"
+          : decidedByNationalRiver
             ? `この点数は${hazard.nat_rivers ?? "国管理河川"}の浸水想定で決まっています。東京都のデータだけで見ると${fmt(hazard.tokyo_exposure, 2, "m")}ですが、この川の想定では${fmt(hazard.nat_exposure, 2, "m")}になります。深いほうを採っています。`
-            : "元データでは浸水深0.1m未満の区域に色がついていません。「0m」は浸水しない保証ではないので、そこは差し引いて見てください。",
+            : `${uchimizuNote}${basinNote}元データでは浸水深0.1m未満の区域に色がついていません。「0m」は浸水しない保証ではないので、そこは差し引いて見てください。`,
     evidence: [
-      { label: "浸水想定区域の面積割合", value: pct(hazard.flood_ratio) },
+      ...(decidedByNationalRiver || showBasinFactor
+        ? [
+            {
+              label: "浸水想定の主な要因",
+              value: decidedByNationalRiver
+                ? (hazard.nat_rivers ?? "国管理河川")
+                : (hazard.flood_basin as string),
+            },
+          ]
+        : []),
+      { label: "浸水が予想される面積割合", value: pct(hazard.flood_ratio) },
       {
-        label: "区域内の平均浸水深",
+        label: "浸水する平均の深さ",
         value: fmt(hazard.flood_mean_depth, 2, " m"),
       },
-      { label: "最大浸水深", value: fmt(hazard.flood_max_depth, 2, " m") },
-      { label: "曝露度（東京都のデータ）", value: fmt(hazard.tokyo_exposure, 2, " m") },
+      { label: "１番深い浸水", value: fmt(hazard.flood_max_depth, 2, " m") },
+      // 点数を決めているほうの数値だけを出す。データ元の注記も付けない
+      // （decidedByNationalRiver のときは上の statusNote で川の名前を
+      // すでに説明しているので、evidence側に重ねて出す必要はない）。
       {
-        label: "曝露度（荒川・多摩川・江戸川）",
-        value: flags.national_river ? fmt(hazard.nat_exposure, 2, " m") : "対象外",
+        label: "平均の浸水の深さ",
+        value: fmt(
+          decidedByNationalRiver ? hazard.nat_exposure : hazard.tokyo_exposure,
+          2,
+          " m",
+        ),
       },
-      { label: "点数を決めたデータ", value: hazard.flood_source },
     ],
   };
 

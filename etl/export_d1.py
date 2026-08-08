@@ -113,6 +113,11 @@ def export(rebuild=False):
     h['flood_mean_depth'] = m['tk_mean_depth']
     h['flood_max_depth'] = m['tk_max_depth']
     h['flood_covered'] = m['tk_coverage'].fillna(False).astype(int)
+    # 主にどの流域の浸水想定で決まっているか（「近くに川があるから」の裏付け）。
+    # 浸水が無い町丁目では該当流域が無いので空欄になる。
+    h['flood_basin'] = m['tk_main_basin']
+    h['flood_basin_ratio'] = m['tk_main_basin_ratio']
+    h['flood_basins'] = m['tk_basins']
     h['tide_ratio'] = m['ts_flood_ratio'].fillna(0)
     h['tide_mean_depth'] = m['ts_mean_depth'].fillna(0)
     h['tide_max_depth'] = m['ts_max_depth'].fillna(0)

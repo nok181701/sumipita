@@ -38,7 +38,7 @@ PRIMARY_KEYS = {
 # 型を決めきれない列の明示。それ以外は値から推定する。
 FORCE_TEXT = {"key", "ward", "town", "ward_code", "kokusei_code",
               "shared_polygon_key", "nat_rivers", "nat_main_label",
-              "nat_max_label", "flood_source"}
+              "nat_max_label", "flood_source", "flood_basin", "flood_basins"}
 
 
 def infer_type(name, values):
@@ -108,14 +108,27 @@ def main():
         # これが無いと2回目に主キー重複で落ちる。
         seed.append(f"DELETE FROM {name};")
         collist = ", ".join(cols)
-        # D1 は1回のexecuteに送れるサイズに上限があるので小分けにする
-        for i in range(0, len(rows), 200):
-            chunk = rows[i:i + 200]
-            values = ",\n".join(
-                "(" + ", ".join(sql_literal(r[c], types[c]) for c in cols) + ")"
-                for r in chunk
-            )
-            seed.append(f"INSERT INTO {name} ({collist}) VALUES\n{values};")
+        # D1 は1回のexecuteに送れるSQL文のバイト数に上限があるので小分けにする。
+        # 以前は固定200行ずつだったが、flood_basin等にテキスト列が増えて
+        # 1行あたりのバイト数が伸びると200行のままでは超過する
+        # （実際に「statement too long: SQLITE_TOOBIG」で失敗した）。
+        # 【注意】文字数(len)ではなくUTF-8のバイト数で見ること。日本語は
+        # 1文字3バイトなので、文字数だけで見ると上限を大きく見誤る。
+        MAX_STATEMENT_BYTES = 80_000
+        row_texts = [
+            "(" + ", ".join(sql_literal(r[c], types[c]) for c in cols) + ")"
+            for r in rows
+        ]
+        chunk, size = [], 0
+        for text in row_texts:
+            n = len(text.encode("utf-8"))
+            if chunk and size + n > MAX_STATEMENT_BYTES:
+                seed.append(f"INSERT INTO {name} ({collist}) VALUES\n" + ",\n".join(chunk) + ";")
+                chunk, size = [], 0
+            chunk.append(text)
+            size += n
+        if chunk:
+            seed.append(f"INSERT INTO {name} ({collist}) VALUES\n" + ",\n".join(chunk) + ";")
 
         print(f"{name}: {len(rows)}行 / {len(cols)}列")
 

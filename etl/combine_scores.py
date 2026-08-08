@@ -38,7 +38,8 @@ def build():
 
     m = safety.merge(
         flood[['key', 'tk_coverage', 'tk_flood_ratio', 'tk_mean_depth', 'tk_max_depth',
-               'tk_mean_elev', 'tk_min_elev', 'tk_below_sea']],
+               'tk_mean_elev', 'tk_min_elev', 'tk_below_sea',
+               'tk_main_basin', 'tk_main_basin_ratio', 'tk_basins']],
         on='key', how='left')
     m = m.merge(
         tide[['key', 'ts_flood_ratio', 'ts_mean_depth', 'ts_max_depth', 'ts_exposure']],

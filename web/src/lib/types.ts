@@ -73,6 +73,16 @@ export type Hazard = {
   tokyo_exposure: number | null;
   /** 洪水スコアがどちらのデータで決まったか */
   flood_source: string;
+  /** 東京都データの中で、浸水想定区域のうちいちばん広い流域（「近くに川がある」の裏付け） */
+  flood_basin: string | null;
+  /** 町丁目内の浸水想定区域のうち、上記の流域が占める割合 */
+  flood_basin_ratio: number | null;
+  /**
+   * 町丁目にかかる流域を面積の大きい順に並べたもの（例: "石神井川流域|神田川流域"）。
+   * 区切りは "|"。流域ラベル自体に「・」を含むものがあるため（中川・綾瀬川流域 等）、
+   * 表示側で split する際は "・" ではなく "|" を使うこと。
+   */
+  flood_basins: string | null;
   nat_main_label: string | null;
   nat_main_ratio: number | null;
   nat_max_label: string | null;
