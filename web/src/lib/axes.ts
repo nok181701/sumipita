@@ -193,7 +193,7 @@ export function buildAxisViews(t: Town): AxisView[] {
       // （decidedByNationalRiver のときは上の statusNote で川の名前を
       // すでに説明しているので、evidence側に重ねて出す必要はない）。
       {
-        label: "平均の浸水の深さ",
+        label: "町丁目全体でならした浸水の深さ",
         value: fmt(
           decidedByNationalRiver ? hazard.nat_exposure : hazard.tokyo_exposure,
           2,
