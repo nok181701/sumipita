@@ -88,7 +88,7 @@ export default function TownSearch({
           value={q}
           onChange={(e) => setQ(e.target.value)}
           placeholder="町丁目で検索（例: 三軒茶屋、芝浦2丁目）"
-          className="w-full rounded-full border border-line bg-aqua-50/60 px-4 py-2 text-sm outline-none transition-colors placeholder:text-muted/70 focus:border-aqua-500 focus:bg-white"
+          className="w-full rounded-full border border-line bg-aqua-50/60 px-4 py-2 text-base outline-none transition-colors placeholder:text-muted/70 focus:border-aqua-500 focus:bg-white"
         />
         <div className="flex flex-wrap gap-1">
           <button
