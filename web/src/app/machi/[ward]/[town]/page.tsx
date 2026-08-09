@@ -101,8 +101,8 @@ export async function generateMetadata({
   const { safety, flood, tide, ground } = data.scores;
 
   return {
-    title: `${data.ward}${data.town}の治安・洪水・高潮・地盤`,
-    description: `${data.ward}${data.town}を公的データで採点。治安${fmt(safety)}点・洪水${fmt(flood)}点・高潮${fmt(tide)}点・地盤（液状化）${fmt(ground)}点（100点満点、東京23区内の相対評価）。引っ越し前に確認したい街の条件をスムピタで。`,
+    title: `${data.ward}${data.town}の治安・洪水・地盤・高潮`,
+    description: `${data.ward}${data.town}を公的データで採点。治安${fmt(safety)}点・洪水${fmt(flood)}点・地盤（液状化）${fmt(ground)}点・高潮${fmt(tide)}点（100点満点、東京23区内の相対評価）。引っ越し前に確認したい街の条件をスムピタで。`,
     alternates: {
       canonical: `/machi/${ward}/${town}`,
     },

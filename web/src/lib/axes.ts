@@ -31,16 +31,6 @@ export const AXES: {
       "同じ区でも一本道を挟んで大きく変わるので、町丁目の単位で見る意味があります。",
   },
   {
-    id: "tide",
-    label: "高潮",
-    unit: "町丁目全体で均した平均浸水深",
-    what:
-      "東京都港湾局「高潮浸水想定区域図」を、洪水と同じ計算方法（浸水想定区域の面積割合×平均浸水深）で数値化" +
-      "（対象は沿岸低地17区）。" +
-      "室戸台風級（910hPa）が最悪の経路で来て、堤防が決壊する前提のかなり厳しい想定です。" +
-      "大雨には強くても高潮には無力な街があるので、洪水とは別の軸に分けています。",
-  },
-  {
     id: "ground",
     label: "地盤（液状化）",
     unit: "ボーリング調査によるPL判定",
@@ -49,6 +39,16 @@ export const AXES: {
       "町丁目ごとに集計しています。埋立地や昔の川筋のような、砂と水を含んだゆるい地盤ほど低得点です。" +
       "当初この軸は標高でしたが、高潮スコアと相関0.856あって1軸まるごと重複していたため、" +
       "地盤そのものの性質に置き換えました。",
+  },
+  {
+    id: "tide",
+    label: "高潮",
+    unit: "町丁目全体で均した平均浸水深",
+    what:
+      "東京都港湾局「高潮浸水想定区域図」を、洪水と同じ計算方法（浸水想定区域の面積割合×平均浸水深）で数値化" +
+      "（対象は沿岸低地17区）。" +
+      "室戸台風級（910hPa）が最悪の経路で来て、堤防が決壊する前提のかなり厳しい想定です。" +
+      "大雨には強くても高潮には無力な街があるので、洪水とは別の軸に分けています。",
   },
 ];
 
@@ -204,36 +204,6 @@ export function buildAxisViews(t: Town): AxisView[] {
     ],
   };
 
-  // 高潮の対象は17区。世田谷・渋谷・中野・杉並・豊島・練馬は区域外。
-  // 「スコア100」ではなく「対象外」と表示しないと、調査済みで安全だと誤読される。
-  const tideStatus: AxisStatus = notScored
-    ? "not_scored"
-    : !flags.tide_in_scope
-      ? "out_of_scope"
-      : "scored";
-  const tide: AxisView = {
-    id: "tide",
-    label: "高潮",
-    score: tideStatus === "scored" ? scores.tide : null,
-    status: tideStatus,
-    statusNote:
-      tideStatus === "out_of_scope"
-        ? "この区は内陸のため、東京都が高潮の想定区域そのものを設定していません。調べた結果リスクがなかった、ということではないので、点数として比べないでください。"
-        : tideStatus === "not_scored"
-          ? "住んでいる人が100人未満の町丁目なので、スコアは出していません。"
-          : null,
-    // 標高は独立した軸から外したが、カード下部に「この土地の高さ」として
-    // 常時表示している（ScoreCard の Elevation）。ここに重ねて出すと二重になる。
-    evidence: [
-      { label: "浸水想定区域の面積割合", value: pct(hazard.tide_ratio) },
-      {
-        label: "区域内の平均浸水深",
-        value: fmt(hazard.tide_mean_depth, 2, " m"),
-      },
-      { label: "最大浸水深", value: fmt(hazard.tide_max_depth, 2, " m") },
-    ],
-  };
-
   // 地盤は液状化。ボーリング地点が1本も無い町丁目は算出できない（456件）
   const groundStatus: AxisStatus = notScored
     ? "not_scored"
@@ -281,7 +251,37 @@ export function buildAxisViews(t: Town): AxisView[] {
     ],
   };
 
-  return [safety, flood, tide, ground];
+  // 高潮の対象は17区。世田谷・渋谷・中野・杉並・豊島・練馬は区域外。
+  // 「スコア100」ではなく「対象外」と表示しないと、調査済みで安全だと誤読される。
+  const tideStatus: AxisStatus = notScored
+    ? "not_scored"
+    : !flags.tide_in_scope
+      ? "out_of_scope"
+      : "scored";
+  const tide: AxisView = {
+    id: "tide",
+    label: "高潮",
+    score: tideStatus === "scored" ? scores.tide : null,
+    status: tideStatus,
+    statusNote:
+      tideStatus === "out_of_scope"
+        ? "この区は内陸のため、東京都が高潮の想定区域そのものを設定していません。調べた結果リスクがなかった、ということではないので、点数として比べないでください。"
+        : tideStatus === "not_scored"
+          ? "住んでいる人が100人未満の町丁目なので、スコアは出していません。"
+          : null,
+    // 標高は独立した軸から外したが、カード下部に「この土地の高さ」として
+    // 常時表示している（ScoreCard の Elevation）。ここに重ねて出すと二重になる。
+    evidence: [
+      { label: "浸水想定区域の面積割合", value: pct(hazard.tide_ratio) },
+      {
+        label: "区域内の平均浸水深",
+        value: fmt(hazard.tide_mean_depth, 2, " m"),
+      },
+      { label: "最大浸水深", value: fmt(hazard.tide_max_depth, 2, " m") },
+    ],
+  };
+
+  return [safety, flood, ground, tide];
 }
 
 /** 洪水は良好なのに高潮が深刻＝台風特化リスク。洪水だけ見ると必ず見落とす */

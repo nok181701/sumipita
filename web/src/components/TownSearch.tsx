@@ -159,8 +159,8 @@ export default function TownSearch({
           >
             <span className="w-9 text-center">治安</span>
             <span className="w-9 text-center">洪水</span>
-            <span className="w-9 text-center">高潮</span>
             <span className="w-9 text-center">液状化</span>
+            <span className="w-9 text-center">高潮</span>
           </span>
         </div>
 
@@ -192,13 +192,13 @@ export default function TownSearch({
                 <span className="flex shrink-0 gap-1.5">
                   <MiniBar value={e.s} />
                   <MiniBar value={e.f} />
+                  <MiniBar value={e.g} />
                   <MiniBar
                     value={e.t}
                     title={
                       e.tide_scope ? "データなし" : "高潮浸水想定区域の対象外"
                     }
                   />
-                  <MiniBar value={e.g} />
                 </span>
               </button>
               {e.slug && (

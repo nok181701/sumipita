@@ -70,14 +70,14 @@ export default function Dashboard({ meta }: { meta: IndexFile }) {
         </div>
         <p className="mt-2 max-w-2xl text-[13.5px] leading-relaxed lg:hidden">
           引越し先を決める前に、
-          <strong className="font-semibold">治安・洪水・高潮・地盤（液状化）</strong>
+          <strong className="font-semibold">治安・洪水・地盤（液状化）・高潮</strong>
           を公的データで町丁目ごとにサクッと確認できます。
         </p>
         <p className="mt-2 hidden max-w-2xl text-[13.5px] leading-relaxed lg:block">
-          治安、洪水、高潮、地盤（液状化）を町丁目ごとに調べました。
+          治安、洪水、地盤（液状化）、高潮を町丁目ごとに調べました。
           <br />
           引越しなどで住居先を決める前に、ここでサクッと確認できます。
-          <strong className="font-semibold">治安・洪水・高潮・地盤（液状化）</strong>
+          <strong className="font-semibold">治安・洪水・地盤（液状化）・高潮</strong>
           の4つを、 公的データから町丁目ごとに出しました。
           <br />
         </p>
