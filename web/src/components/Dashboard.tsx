@@ -58,8 +58,6 @@ export default function Dashboard({ meta }: { meta: IndexFile }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const selectedSlug = meta.index.find((e) => e.key === selected)?.slug ?? null;
-
   return (
     <div className="mx-auto max-w-6xl px-4 pb-10 pt-6">
       <header className="mb-4">
@@ -110,17 +108,6 @@ export default function Dashboard({ meta }: { meta: IndexFile }) {
             </div>
           )}
           {town && <ScoreCard town={town} headingLevel="h2" />}
-
-          {town && selectedSlug && (
-            <div className="text-right">
-              <Link
-                href={`/machi/${selectedSlug.wardSlug}/${selectedSlug.townSlug}`}
-                className="text-[12px] font-medium text-aqua-700 underline decoration-aqua-200 underline-offset-2 hover:text-aqua-600"
-              >
-                この街の詳細ページを開く（共有・ブックマーク用） →
-              </Link>
-            </div>
-          )}
 
           <div className="rounded-card border border-line bg-white p-4 text-center shadow-card">
             <Link
