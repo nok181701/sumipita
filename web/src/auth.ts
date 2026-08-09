@@ -18,5 +18,9 @@ export const { handlers, auth, signIn, signOut } = NextAuth(async () => {
       }),
     ],
     secret: env.AUTH_SECRET,
+    // Cloudflare Workers はCloudflare自体のプロキシ越しに来るため、Auth.jsが
+    // リクエストのHostヘッダを自動では信用しない（UntrustedHostエラーになる）。
+    // ドメインはこちらのWorker/DNS側で確定しているので明示的に信頼する。
+    trustHost: true,
   };
 });
