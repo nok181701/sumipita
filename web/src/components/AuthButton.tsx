@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { signIn, signOut, useSession } from "next-auth/react";
 import { useEffect, useRef, useState } from "react";
 
@@ -74,6 +75,13 @@ export default function AuthButton() {
                 {session.user.email}
               </p>
             )}
+            <Link
+              href="/favorites"
+              onClick={() => setOpen(false)}
+              className="block w-full border-t border-line px-3 py-2 text-left text-[11px] text-ink transition-colors hover:bg-aqua-50"
+            >
+              お気に入り
+            </Link>
             <button
               onClick={() => signOut()}
               className="block w-full border-t border-line px-3 py-2 text-left text-[11px] text-ink transition-colors hover:bg-aqua-50"

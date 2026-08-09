@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import Link from "next/link";
+import AuthButton from "@/components/AuthButton";
 import Logo from "@/components/Logo";
 import ScoreCard from "@/components/ScoreCard";
 import { loadTown, loadAllTowns } from "@/server/db";
@@ -131,11 +132,14 @@ export default async function TownPage({
       ))}
 
       <header className="mb-4">
-        <div className="flex items-baseline gap-2.5">
-          <Link href="/" aria-label="すみピタのトップへ">
-            <Logo size={32} />
-          </Link>
-          <span className="text-[12px] text-muted">東京23区・町丁目単位</span>
+        <div className="flex items-baseline justify-between gap-2.5">
+          <div className="flex items-baseline gap-2.5">
+            <Link href="/" aria-label="すみピタのトップへ">
+              <Logo size={32} />
+            </Link>
+            <span className="text-[12px] text-muted">東京23区・町丁目単位</span>
+          </div>
+          <AuthButton />
         </div>
         <nav aria-label="パンくずリスト" className="mt-2 text-[12px] text-muted">
           <Link

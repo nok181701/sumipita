@@ -22,5 +22,13 @@ export const { handlers, auth, signIn, signOut } = NextAuth(async () => {
     // リクエストのHostヘッダを自動では信用しない（UntrustedHostエラーになる）。
     // ドメインはこちらのWorker/DNS側で確定しているので明示的に信頼する。
     trustHost: true,
+    // database戦略（アダプタ利用時）はデフォルトだとsession.user.idが落ちるため明示する。
+    // お気に入り機能などユーザーIDでD1を引く処理に必要。
+    callbacks: {
+      session({ session, user }) {
+        session.user.id = user.id;
+        return session;
+      },
+    },
   };
 });

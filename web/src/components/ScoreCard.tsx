@@ -10,6 +10,7 @@ import {
   typhoonSpecific,
 } from "@/lib/axes";
 import { CRITERIA_ANCHOR } from "@/lib/criteria";
+import FavoriteButton from "@/components/FavoriteButton";
 import type { AxisView } from "@/lib/axes";
 import type { Town } from "@/lib/types";
 
@@ -268,15 +269,18 @@ export default function ScoreCard({
 
   return (
     <section className="rounded-card border border-line bg-white p-5 shadow-card">
-      <header className="mb-3">
-        <Heading className="mt-0.5 text-2xl font-bold tracking-tight">
-          {town.ward}
-          <span className="text-aqua-700">{town.town}</span>
-        </Heading>
-        <p className="mt-1 text-[12px] text-muted">
-          いま {town.pop?.toLocaleString() ?? "—"}人 ・{" "}
-          {town.households?.toLocaleString() ?? "—"}世帯が暮らしています
-        </p>
+      <header className="mb-3 flex items-start justify-between gap-2">
+        <div>
+          <Heading className="mt-0.5 text-2xl font-bold tracking-tight">
+            {town.ward}
+            <span className="text-aqua-700">{town.town}</span>
+          </Heading>
+          <p className="mt-1 text-[12px] text-muted">
+            いま {town.pop?.toLocaleString() ?? "—"}人 ・{" "}
+            {town.households?.toLocaleString() ?? "—"}世帯が暮らしています
+          </p>
+        </div>
+        <FavoriteButton townKey={town.key} />
       </header>
 
       {/* 一言まとめ。総合点ではなく「どこが強くてどこが弱いか」を言う */}
