@@ -2,8 +2,9 @@
 
 東京23区の町丁目ごとに治安・洪水・高潮・地盤（液状化）を可視化する引越し先リサーチダッシュボード。
 
-
 ## 構成
+
+![構成図](docs/sumipita-infra.png)
 
 ```
 etl/        ETLスクリプト一式（生データ → cache/ → dist/ → web/migrations, web/seed）
@@ -11,16 +12,25 @@ cache/      ETL中間・最終成果物（コミット済み）
 web/        webアプリ
 ```
 
-## セットアップ
-
-```bash
-python3 -m venv .venv
-source .venv/bin/activate       # fishなら activate.fish
-python3 -m pip install -r requirements.txt
-```
-
 生データは `data/` に置く。配置ファイル名は
 `etl/paths.py`、取得元URLは `machi-project-plan.md` 参照。`SUMIPITA_DATA` で置き場所を変更可。
+
+### レンダリング
+
+- **一覧ページ** (`/`, `/api/town`): Workers上でSSR。従来通り毎リクエストRemote D1を参照して生成する。
+- **詳細ページ** (`/machi/[ward]/[town]`、3,142ページ): SSG。R2 incremental cache (`sumipita-cache`) の静的HTML/RSCを配信する。キャッシュMISS時のみD1から生成し、そのままR2へ書き込む（ISRフォールバック）。
+
+### Workers / D1 / R2 / CI
+
+- **Workers**: Next.js (OpenNext) 本体。一覧ページのSSRと、詳細ページのR2キャッシュ読み書きを担当。
+- **D1**: `sumipita` DB。一覧ページは毎回、詳細ページはキャッシュMISS時のみ問い合わせる。
+- **R2**: `sumipita-cache` バケット。詳細ページの静的ページを保持（90日で自動削除のライフサイクルルール設定済み）。
+- **CI (GitHub Actions)**:
+  - `deploy.yml` — mainへのpushで自動実行。型チェック→ビルド→D1マイグレーション適用→deploy。詳細ページの再生成はしない（既存R2キャッシュはそのまま）。
+  - `load-data.yml` — 手動実行。スコア再計算などデータ更新時に、Remote D1へmigrations+seedを投入。
+  - `populate-machi-cache.yml` — 手動実行。データ更新後、詳細ページ3,142件を使い捨てLocal D1でSSGビルドし、Remote R2へ一括書き込み。
+
+> R2に置く静的ファイルは`next.config.mjs`の`generateBuildId`でビルドIDを固定してある。固定しないとコードをpushするたびにキャッシュの参照先が変わり、`populate-machi-cache.yml`で作ったキャッシュも読めなくなるため。ビルドIDを変える場合は`populate-machi-cache.yml`を再実行すること。
 
 ## 実行
 
@@ -44,7 +54,7 @@ npm run dev
 
 ## データを更新する
 
-スコア・生データを変えたときだけ。**3ステップとも必要**（片方だけだとページ間でスコアが食い違う。理由は下記）。
+スコア・生データを変えたときだけ。3ステップとも必要（片方だけだとページ間でスコアが食い違う）。
 
 ```bash
 python3 etl/export_d1.py --rebuild
@@ -54,47 +64,15 @@ git commit -m "データ更新"
 git push
 ```
 
-1. **push**: `deploy.yml`が自動で走り、コードをデプロイする（`/machi/[ward]/[town]`は再生成しない）。
-2. **Load D1 Data**: GitHubの**Actions → Load D1 Data → Run workflow**から手動実行し、
-   本番のRemote D1にデータを入れる（`load-data.yml`が`migrations/0001_init.sql`でスキーマを揃えたあと
-   `seed/data.sql`を投入）。トップページ（`/`）と`/api/town`はここを見ている。
-3. **Populate Machi Cache**: GitHubの**Actions → Populate Machi Cache → Run workflow**から手動実行し、
-   `/machi/[ward]/[town]`（3,142ページ）を新しいスコアで作り直してRemote R2キャッシュへ書き込む
-   （`populate-machi-cache.yml`）。
-
-自動投入にしていないのは、DBが一時的に使用不可になるうえ、スコア再計算時以外は流す必要が無いため。
+1. push → `deploy.yml`が自動デプロイ
+2. GitHub Actions → **Load D1 Data** を手動実行 → Remote D1にデータ投入
+3. GitHub Actions → **Populate Machi Cache** を手動実行 → 詳細ページをR2へ再生成
 
 ## デプロイ
 
-Cloudflare Workers に [OpenNext](https://opennext.js.org/cloudflare) で載せる。
-main への push で 型チェック → ビルド → D1マイグレーション適用 → デプロイ が自動で走る（`.github/workflows/deploy.yml`）。
-ここでの「D1マイグレーション適用」は新規セットアップ用で、既存カラムの追加などスキーマ変更は
-反映されない（上記の理由）。スキーマ変更はLoad D1 Dataの手動実行で行う。
+Cloudflare Workers に [OpenNext](https://opennext.js.org/cloudflare) で載せる。mainへのpushで自動デプロイ（`deploy.yml`）。
 
-トップページ（`/`）と`/api/town`はスコア・犯罪件数・ハザード値を**Remote D1から毎リクエストSSRで参照**する。
-`/machi/[ward]/[town]`（町丁目詳細ページ）はR2（`open-next.config.ts`のincrementalCache、`wrangler.jsonc`の
-`NEXT_INC_CACHE_R2_BUCKET`）をキャッシュとして使う。ただし**通常の`deploy.yml`ではこのキャッシュを作らない**
-（`generateStaticParams`は`POPULATE_MACHI_CACHE=1`が付いているときだけ全件を返し、通常ビルドでは空リスト。
-コードのpushのたびにD1へ3,142回問い合わせるのを避けるため）。空リストでも`dynamicParams: true`なので、
-アクセス時にD1から生成してそのままR2へ積まれる（本来のISRのフォールバック動作）。データ更新時に
-まとめて生成しておきたい場合は`populate-machi-cache.yml`を手動実行する。地図のポリゴンは静的アセット。
-
-（一度R2/KVの設定を忘れてSSG化し、本番で全ページ404にした。デプロイ後は
-`curl -I` で `x-nextjs-cache: HIT` になっているか必ず確認すること。）
-
-**ビルドIDを固定してある**（`next.config.mjs`の`generateBuildId`）。R2キャッシュのキーにビルドIDが
-入るため、固定しないと通常のコードデプロイのたびに参照先が変わり、それまでのキャッシュが
-（`populate-machi-cache.yml`で作ったものも含めて）読めなくなる。変更する場合は
-`populate-machi-cache.yml`を再実行すること。
-
-**それでもR2キャッシュはpopulate/フォールバック生成のたびに増える**（同じビルドID内では基本的に
-同じキーに上書きされるはずだが、ビルドIDを変えたときや検証時は積み上がる）。無限に溜まらないよう
-`sumipita-cache`バケットに90日で自動削除のライフサイクルルールを設定済み
-（`wrangler r2 bucket lifecycle add sumipita-cache expire-old-cache --expire-days 90`。
-コードには残らない設定なので、バケットを作り直した場合はこのコマンドを再実行すること）。
-
-`populate-machi-cache.yml`のRemote R2書き込みには、`CLOUDFLARE_API_TOKEN`にR2の編集権限が必要
-（無いと`403 Authentication error`で失敗する。実際に一度これで失敗している）。
+（一度R2の設定を忘れてSSG化し、本番で全ページ404にしたことがある。デプロイ後は
+`curl -I` で `x-nextjs-cache: HIT` になっているか確認すること。）
 
 ローカルで本番相当を見る: `cd web && npm run preview`
-
