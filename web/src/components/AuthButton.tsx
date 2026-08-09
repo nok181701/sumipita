@@ -100,7 +100,7 @@ export default function AuthButton() {
       className="relative flex -translate-y-2 items-center gap-2 rounded-full border border-line bg-white px-3 py-1.5 text-[11px] font-medium text-ink shadow-sm transition-shadow hover:shadow-card"
     >
       <GoogleIcon />
-      Googleでログイン
+      Googleでログインする
     </button>
   );
 }
