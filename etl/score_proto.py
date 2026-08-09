@@ -1,4 +1,4 @@
-"""スムピタ 治安スコア プロトタイプ検証"""
+"""すみピタ 治安スコア プロトタイプ検証"""
 import pandas as pd, re, unicodedata
 import paths
 

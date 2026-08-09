@@ -108,7 +108,7 @@ export default function CriteriaSection({
     <section id="criteria" className="scroll-mt-4 space-y-4">
       <header className="px-1">
         <Heading className="text-xl font-bold tracking-tight">
-          スムピタの判定基準
+          すみピタの判定基準
         </Heading>
         <p className="mt-1 text-[12.5px] leading-relaxed text-muted">
           点数はすべて、23区3,142町丁目の中での相対的な順位です（100に近いほど上位）。

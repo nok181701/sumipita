@@ -13,8 +13,8 @@ const logoFont = Zen_Maru_Gothic({
 export const metadata: Metadata = {
   metadataBase: new URL("https://sumipita.com"),
   title: {
-    default: "スムピタ — 引越し先の街を、決める前に確かめる",
-    template: "%s | スムピタ",
+    default: "すみピタ — 引越し先の街を、決める前に確かめる",
+    template: "%s | すみピタ",
   },
   description:
     "東京23区の町丁目ごとに、治安・洪水・地盤（液状化）・高潮の4つを公的データから点数化。内見では分からない街の条件を地図と一緒に確認できます。",

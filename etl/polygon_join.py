@@ -1,4 +1,4 @@
-"""スムピタ 町丁目ポリゴン結合"""
+"""すみピタ 町丁目ポリゴン結合"""
 import geopandas as gpd
 import sys
 sys.path.insert(0, '.')

@@ -42,7 +42,7 @@ function buildJsonLd(data: Town, ward: string, town: string) {
     "@context": "https://schema.org",
     "@type": "BreadcrumbList",
     itemListElement: [
-      { "@type": "ListItem", position: 1, name: "スムピタ", item: BASE_URL },
+      { "@type": "ListItem", position: 1, name: "すみピタ", item: BASE_URL },
       { "@type": "ListItem", position: 2, name: `${data.ward}${data.town}`, item: url },
     ],
   };
@@ -102,7 +102,7 @@ export async function generateMetadata({
 
   return {
     title: `${data.ward}${data.town}の治安・洪水・地盤・高潮`,
-    description: `${data.ward}${data.town}を公的データで採点。治安${fmt(safety)}点・洪水${fmt(flood)}点・地盤（液状化）${fmt(ground)}点・高潮${fmt(tide)}点（100点満点、東京23区内の相対評価）。引っ越し前に確認したい街の条件をスムピタで。`,
+    description: `${data.ward}${data.town}を公的データで採点。治安${fmt(safety)}点・洪水${fmt(flood)}点・地盤（液状化）${fmt(ground)}点・高潮${fmt(tide)}点（100点満点、東京23区内の相対評価）。引っ越し前に確認したい街の条件をすみピタで。`,
     alternates: {
       canonical: `/machi/${ward}/${town}`,
     },
@@ -132,7 +132,7 @@ export default async function TownPage({
 
       <header className="mb-4">
         <div className="flex items-baseline gap-2.5">
-          <Link href="/" aria-label="スムピタのトップへ">
+          <Link href="/" aria-label="すみピタのトップへ">
             <Logo size={32} />
           </Link>
           <span className="text-[12px] text-muted">東京23区・町丁目単位</span>

@@ -1,4 +1,4 @@
-"""スムピタ 総合スコア（治安 / 洪水 / 高潮 / 地盤 の4軸並列）
+"""すみピタ 総合スコア（治安 / 洪水 / 高潮 / 地盤 の4軸並列）
 
 4軸を合成せず並列表示する。引越し先選びでは
 「豪雨には強いが台風には弱い」といった区別こそが判断材料になるため。
@@ -173,4 +173,4 @@ if __name__ == '__main__':
     print(f'高潮まで実測して4軸すべて良好: {int(measured.sum())}件 / '
           f'人口 {int(good[measured]["pop"].sum()):,}人')
     print(good[measured].groupby('ward').size().sort_values(ascending=False).to_string())
-    m.to_csv('cache/sumupita_scores.csv', index=False)
+    m.to_csv('cache/sumipita_scores.csv', index=False)

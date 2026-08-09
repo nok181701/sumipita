@@ -17,7 +17,7 @@ function Symbol({ size, className }: { size: number; className?: string }) {
       viewBox="0 0 48 48"
       fill="none"
       role="img"
-      aria-label="すむピタ"
+      aria-label="すみピタ"
       className={className}
     >
       <rect x="3" y="3" width="42" height="42" rx="13" stroke="#c3e9f2" strokeWidth="2.5" />
@@ -39,7 +39,7 @@ export default function Logo({ variant = "horizontal", size = 40, className }: P
           className="font-bold leading-none text-ink"
           style={{ fontFamily: "var(--font-logo)", fontSize: size * 0.62, letterSpacing: ".03em" }}
         >
-          すむピタ
+          すみピタ
         </span>
       </span>
     );
@@ -52,7 +52,7 @@ export default function Logo({ variant = "horizontal", size = 40, className }: P
         className="font-bold leading-none text-ink"
         style={{ fontFamily: "var(--font-logo)", fontSize: size * 0.78, letterSpacing: ".02em" }}
       >
-        すむピタ
+        すみピタ
       </span>
     </span>
   );

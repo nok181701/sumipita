@@ -1,4 +1,4 @@
-"""スムピタ ETL: D1投入用CSVとR2用GeoJSONを書き出す
+"""すみピタ ETL: D1投入用CSVとR2用GeoJSONを書き出す
 
 GitHub Actions の定期実行でこれを走らせ、成果物を D1 / R2 に push する想定。
 重いGIS処理（geopandas）はここで完結させ、Workers側は読むだけにする。
@@ -13,7 +13,7 @@ from polygon_join import join as town_join
 
 OUT = 'dist'
 DATA_YEAR = 2025
-SCORES_CSV = 'cache/sumupita_scores.csv'
+SCORES_CSV = 'cache/sumipita_scores.csv'
 WARD_CODES = {w: f'131{i:02d}' for i, w in enumerate(
     ['千代田区', '中央区', '港区', '新宿区', '文京区', '台東区', '墨田区', '江東区',
      '品川区', '目黒区', '大田区', '世田谷区', '渋谷区', '中野区', '杉並区', '豊島区',
@@ -28,7 +28,7 @@ def load_scores(rebuild=False):
     """4軸スコアを取得する。
 
     浸水・高潮の集計は600万点規模の空間結合で数分かかるため、既に
-    `cache/sumupita_scores.csv` があるときは既定でそれを再利用する。
+    `cache/sumipita_scores.csv` があるときは既定でそれを再利用する。
     生データを更新したときや、スコア定義を変えたときは rebuild=True で
     combine_scores から作り直すこと（GitHub Actions では毎回こちら）。
     """
