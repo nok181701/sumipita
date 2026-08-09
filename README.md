@@ -6,15 +6,12 @@
 
 ![構成図](docs/sumipita-infra.png)
 
-生データは `data/` に置く。配置ファイル名は
-`etl/paths.py`、取得元URLは `machi-project-plan.md` 参照。`SUMIPITA_DATA` で置き場所を変更可。
-
 ### レンダリング
 
 - **一覧ページ** (`/`, `/api/town`): Workers上でSSR。従来通り毎リクエストRemote D1を参照して生成する。
 - **詳細ページ** (`/machi/[ward]/[town]`、3,142ページ): SSG。R2 incremental cache (`sumipita-cache`) の静的HTML/RSCを配信する。キャッシュMISS時のみD1から生成しR2へ書き込むフォールバック方式（`revalidate`はしていないので、生成後はそのまま固定＝ISRではない）。
 
-### Workers / D1 / R2 / CI
+### Workers / D1 / R2 / CIの役割
 
 - **Workers**: Next.js (OpenNext) 本体。一覧ページのSSRと、詳細ページのR2キャッシュ読み書きを担当。
 - **D1**: `sumipita` DB。一覧ページは毎回、詳細ページはキャッシュMISS時のみ問い合わせる。
