@@ -46,7 +46,7 @@
         <mxCell id="listRoute" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;" value="一覧ページ  `/` ・ `/api/town`&#xa;SSR（今まで通り・毎リクエスト処理）" vertex="1">
           <mxGeometry height="110" width="460" x="960" y="280" as="geometry" />
         </mxCell>
-        <mxCell id="detailRoute" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" value="詳細ページ `/machi/[ward]/[town]`&#xa;SSG — まずR2の静的ページを参照&#xa;MISS時のみD1から生成しR2へ書き込み&#xa;（ISRフォールバック）" vertex="1">
+        <mxCell id="detailRoute" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" value="詳細ページ `/machi/[ward]/[town]`&#xa;SSG — まずR2の静的ページを参照&#xa;MISS時のみD1から生成しR2へ書き込み&#xa;（フォールバック生成、revalidateなし）" vertex="1">
           <mxGeometry height="150" width="460" x="960" y="420" as="geometry" />
         </mxCell>
         <mxCell id="assets" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;" value="Static Assets&#xa;public/data/geojson ×24" vertex="1">
@@ -106,7 +106,7 @@
         <mxCell id="e13" edge="1" parent="1" source="detailRoute" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;dashed=1;startArrow=classic;startFill=1;exitX=0.3;exitY=1;entryX=0.7;entryY=0;" target="d1cyl" value="MISS時のみ SELECT">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="e14" edge="1" parent="1" source="detailRoute" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;dashed=1;exitX=1;exitY=0.8;entryX=0;entryY=0.7;" target="r2cyl" value="MISS時: 生成結果を書き込み&#xa;(ISRフォールバック)">
+        <mxCell id="e14" edge="1" parent="1" source="detailRoute" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;dashed=1;exitX=1;exitY=0.8;entryX=0;entryY=0.7;" target="r2cyl" value="MISS時: 生成結果を書き込み&#xa;(フォールバック生成)">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
       </root>

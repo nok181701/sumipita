@@ -6,29 +6,20 @@
 
 ![構成図](docs/sumipita-infra.png)
 
-```
-etl/        ETLスクリプト一式（生データ → cache/ → dist/ → web/migrations, web/seed）
-cache/      ETL中間・最終成果物（コミット済み）
-web/        webアプリ
-```
-
 生データは `data/` に置く。配置ファイル名は
 `etl/paths.py`、取得元URLは `machi-project-plan.md` 参照。`SUMIPITA_DATA` で置き場所を変更可。
 
 ### レンダリング
 
 - **一覧ページ** (`/`, `/api/town`): Workers上でSSR。従来通り毎リクエストRemote D1を参照して生成する。
-- **詳細ページ** (`/machi/[ward]/[town]`、3,142ページ): SSG。R2 incremental cache (`sumipita-cache`) の静的HTML/RSCを配信する。キャッシュMISS時のみD1から生成し、そのままR2へ書き込む（ISRフォールバック）。
+- **詳細ページ** (`/machi/[ward]/[town]`、3,142ページ): SSG。R2 incremental cache (`sumipita-cache`) の静的HTML/RSCを配信する。キャッシュMISS時のみD1から生成しR2へ書き込むフォールバック方式（`revalidate`はしていないので、生成後はそのまま固定＝ISRではない）。
 
 ### Workers / D1 / R2 / CI
 
 - **Workers**: Next.js (OpenNext) 本体。一覧ページのSSRと、詳細ページのR2キャッシュ読み書きを担当。
 - **D1**: `sumipita` DB。一覧ページは毎回、詳細ページはキャッシュMISS時のみ問い合わせる。
-- **R2**: `sumipita-cache` バケット。詳細ページの静的ページを保持（90日で自動削除のライフサイクルルール設定済み）。
-- **CI (GitHub Actions)**:
-  - `deploy.yml` — mainへのpushで自動実行。型チェック→ビルド→D1マイグレーション適用→deploy。詳細ページの再生成はしない（既存R2キャッシュはそのまま）。
-  - `load-data.yml` — 手動実行。スコア再計算などデータ更新時に、Remote D1へmigrations+seedを投入。
-  - `populate-machi-cache.yml` — 手動実行。データ更新後、詳細ページ3,142件を使い捨てLocal D1でSSGビルドし、Remote R2へ一括書き込み。
+- **R2**: バケット。詳細ページの静的ページを保持（90日で自動削除のライフサイクルルール設定済み）。
+- **CI (GitHub Actions)**: `deploy.yml`（mainへのpushで自動デプロイ。詳細ページのR2キャッシュには触らない）/ `load-data.yml`・`populate-machi-cache.yml`（手動実行、詳細は下記「データを更新する」）。
 
 > R2に置く静的ファイルは`next.config.mjs`の`generateBuildId`でビルドIDを固定してある。固定しないとコードをpushするたびにキャッシュの参照先が変わり、`populate-machi-cache.yml`で作ったキャッシュも読めなくなるため。ビルドIDを変える場合は`populate-machi-cache.yml`を再実行すること。
 
@@ -65,12 +56,8 @@ git push
 ```
 
 1. push → `deploy.yml`が自動デプロイ
-2. GitHub Actions → **Load D1 Data** を手動実行 → Remote D1にデータ投入
-3. GitHub Actions → **Populate Machi Cache** を手動実行 → 詳細ページをR2へ再生成
-
-## デプロイ
-
-Cloudflare Workers に [OpenNext](https://opennext.js.org/cloudflare) で載せる。mainへのpushで自動デプロイ（`deploy.yml`）。
+2. GitHub Actions → **Load D1 Data** を手動実行 → Remote D1へmigrations+seedを投入
+3. GitHub Actions → **Populate Machi Cache** を手動実行 → 詳細ページ3,142件を使い捨てLocal D1でSSGビルドし、Remote R2へ一括書き込み
 
 （一度R2の設定を忘れてSSG化し、本番で全ページ404にしたことがある。デプロイ後は
 `curl -I` で `x-nextjs-cache: HIT` になっているか確認すること。）
