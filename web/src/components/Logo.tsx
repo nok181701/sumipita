@@ -6,8 +6,8 @@ type Props = {
   className?: string;
 };
 
-const HOUSE =
-  "M24 9.5 L38 20 V36.5 a2.5 2.5 0 0 1 -2.5 2.5 H12.5 A2.5 2.5 0 0 1 10 36.5 V20 Z";
+/** 区画に一片が嵌まる直前の形 —「ピタ」の嵌合 */
+const NOTCH = "M16 5 H32 A11 11 0 0 1 43 16 V26 H30 A4 4 0 0 0 26 30 V43 H16 A11 11 0 0 1 5 32 Z";
 
 function Symbol({ size, className }: { size: number; className?: string }) {
   return (
@@ -20,10 +20,8 @@ function Symbol({ size, className }: { size: number; className?: string }) {
       aria-label="すみピタ"
       className={className}
     >
-      <rect x="3" y="3" width="42" height="42" rx="13" stroke="#c3e9f2" strokeWidth="2.5" />
-      <path d={HOUSE} fill="#2bb3cd" />
-      {/* 扉は背景の抜き。白以外の面に置くならこの fill を合わせる */}
-      <rect x="19.5" y="27" width="9" height="12" rx="2.2" fill="#fff" />
+      <path d={NOTCH} fill="#2bb3cd" />
+      <rect x="30" y="30" width="13" height="13" rx="4" fill="#0f2c38" />
     </svg>
   );
 }
