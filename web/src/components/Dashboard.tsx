@@ -68,7 +68,6 @@ export default function Dashboard({ meta }: { meta: IndexFile }) {
             <h1>
               <Logo size={32} />
             </h1>
-            <span className="text-[12px] text-muted">東京23区・町丁目単位</span>
           </div>
           <AuthButton />
         </div>
