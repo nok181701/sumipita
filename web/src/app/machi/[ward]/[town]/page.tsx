@@ -35,7 +35,8 @@ function buildJsonLd(data: Town, ward: string, town: string) {
       value: Math.round(v.score as number),
       minValue: 0,
       maxValue: 100,
-      description: "東京23区3,142町丁目内での相対評価（100に近いほど上位、公的データから算出）",
+      description:
+        "東京23区3,142町丁目内での相対評価（100に近いほど上位、公的データから算出）",
     })),
   };
 
@@ -44,8 +45,18 @@ function buildJsonLd(data: Town, ward: string, town: string) {
     "@type": "BreadcrumbList",
     itemListElement: [
       { "@type": "ListItem", position: 1, name: "すみピタ", item: BASE_URL },
-      { "@type": "ListItem", position: 2, name: data.ward, item: `${BASE_URL}/machi/${ward}` },
-      { "@type": "ListItem", position: 3, name: `${data.ward}${data.town}`, item: url },
+      {
+        "@type": "ListItem",
+        position: 2,
+        name: data.ward,
+        item: `${BASE_URL}/machi/${ward}`,
+      },
+      {
+        "@type": "ListItem",
+        position: 3,
+        name: `${data.ward}${data.town}`,
+        item: url,
+      },
     ],
   };
 
@@ -136,11 +147,13 @@ export default async function TownPage({
             <Link href="/" aria-label="すみピタのトップへ">
               <Logo size={32} />
             </Link>
-            <span className="text-[12px] text-muted">東京23区・町丁目単位</span>
           </div>
           <AuthButton />
         </div>
-        <nav aria-label="パンくずリスト" className="mt-2 text-[12px] text-muted">
+        <nav
+          aria-label="パンくずリスト"
+          className="mt-2 text-[12px] text-muted"
+        >
           <Link
             href="/"
             className="text-aqua-700 underline decoration-aqua-200 underline-offset-2 hover:text-aqua-600"

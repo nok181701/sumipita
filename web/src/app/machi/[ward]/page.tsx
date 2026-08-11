@@ -20,7 +20,9 @@ const wardBySlug: Record<string, string> = Object.fromEntries(
 // /machi/[ward]/[town] と同じ理由・同じフラグ（PRERENDER_ALL_MACHI=1）でだけ全件事前生成する。
 export function generateStaticParams() {
   if (process.env.PRERENDER_ALL_MACHI !== "1") return [];
-  return Object.values(machiSlugs.wardSlug).map((wardSlug) => ({ ward: wardSlug }));
+  return Object.values(machiSlugs.wardSlug).map((wardSlug) => ({
+    ward: wardSlug,
+  }));
 }
 
 export const dynamicParams = true;
@@ -130,11 +132,13 @@ export default async function WardPage({
             <Link href="/" aria-label="すみピタのトップへ">
               <Logo size={32} />
             </Link>
-            <span className="text-[12px] text-muted">東京23区・町丁目単位</span>
           </div>
           <AuthButton />
         </div>
-        <nav aria-label="パンくずリスト" className="mt-2 text-[12px] text-muted">
+        <nav
+          aria-label="パンくずリスト"
+          className="mt-2 text-[12px] text-muted"
+        >
           <Link
             href="/"
             className="text-aqua-700 underline decoration-aqua-200 underline-offset-2 hover:text-aqua-600"
@@ -147,9 +151,12 @@ export default async function WardPage({
       </header>
 
       <div className="rounded-card border border-line bg-white p-5 shadow-card">
-        <h1 className="text-2xl font-bold tracking-tight">{ward}の町丁目一覧</h1>
+        <h1 className="text-2xl font-bold tracking-tight">
+          {ward}の町丁目一覧
+        </h1>
         <p className="mt-2 text-[12.5px] leading-relaxed text-muted">
-          {ward}には{towns.length}の町丁目があります。同じ区の中でも、隣り合う町丁目でスコアが大きく異なるため、
+          {ward}には{towns.length}
+          の町丁目があります。同じ区の中でも、隣り合う町丁目でスコアが大きく異なるため、
           区としての平均点は出していません。気になる町丁目を選んで確認してください。
         </p>
 
@@ -166,7 +173,10 @@ export default async function WardPage({
             </thead>
             <tbody>
               {towns.map((t) => (
-                <tr key={t.key} className="border-b border-line/70 last:border-0">
+                <tr
+                  key={t.key}
+                  className="border-b border-line/70 last:border-0"
+                >
                   <td className="px-2 py-1.5 text-[12.5px]">
                     {t.slug ? (
                       <Link
