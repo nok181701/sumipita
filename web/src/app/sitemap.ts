@@ -4,6 +4,14 @@ import machiSlugs from "@/lib/machiSlugs.json";
 const BASE_URL = "https://sumipita.com";
 
 export default function sitemap(): MetadataRoute.Sitemap {
+  const wardUrls: MetadataRoute.Sitemap = Object.values(machiSlugs.wardSlug).map(
+    (wardSlug) => ({
+      url: `${BASE_URL}/machi/${wardSlug}`,
+      changeFrequency: "yearly",
+      priority: 0.7,
+    }),
+  );
+
   const townUrls: MetadataRoute.Sitemap = Object.entries(machiSlugs.townSlug).map(
     ([key, townSlug]) => {
       const ward = key.split("|")[0];
@@ -19,6 +27,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
   return [
     { url: BASE_URL, changeFrequency: "weekly", priority: 1 },
     { url: `${BASE_URL}/criteria`, changeFrequency: "yearly", priority: 0.4 },
+    ...wardUrls,
     ...townUrls,
   ];
 }

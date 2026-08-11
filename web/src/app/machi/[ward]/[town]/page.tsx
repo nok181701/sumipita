@@ -44,7 +44,8 @@ function buildJsonLd(data: Town, ward: string, town: string) {
     "@type": "BreadcrumbList",
     itemListElement: [
       { "@type": "ListItem", position: 1, name: "すみピタ", item: BASE_URL },
-      { "@type": "ListItem", position: 2, name: `${data.ward}${data.town}`, item: url },
+      { "@type": "ListItem", position: 2, name: data.ward, item: `${BASE_URL}/machi/${ward}` },
+      { "@type": "ListItem", position: 3, name: `${data.ward}${data.town}`, item: url },
     ],
   };
 
@@ -149,10 +150,14 @@ export default async function TownPage({
             地図で全町丁目を見る
           </Link>
           <span className="mx-1.5">›</span>
-          <span>
+          <Link
+            href={`/machi/${ward}`}
+            className="text-aqua-700 underline decoration-aqua-200 underline-offset-2 hover:text-aqua-600"
+          >
             {data.ward}
-            {data.town}
-          </span>
+          </Link>
+          <span className="mx-1.5">›</span>
+          <span>{data.town}</span>
         </nav>
       </header>
 
