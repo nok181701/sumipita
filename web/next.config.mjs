@@ -1,12 +1,6 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
-  // PRERENDER_ALL_MACHI=1で /machi/[ward]/[town] を3,142件 generateStaticParams で
-  // 並列にビルドすると、ローカルD1（miniflareのシミュレータ）が同時アクセスに
-  // 耐えられず落ちるため、直列にする。
-  experimental: {
-    cpus: 1,
-  },
   // buildIdはNext.jsのデフォルト（毎ビルドでランダム）に任せる。
   //
   // 以前はR2 incremental cacheのキー（prefix/buildId/hash）を固定するために

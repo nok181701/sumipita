@@ -241,16 +241,4 @@ export async function loadTown(key: string): Promise<Town | null> {
   return r ? rowToTown(r) : null;
 }
 
-/**
- * 全町丁目の詳細を1クエリでまとめて取る。
- *
- * /machi/[ward]/[town] の全件事前生成ビルド（PRERENDER_ALL_MACHI=1、deploy.yml）専用。
- * 3,142件を1件ずつloadTownで問い合わせると、ローカルD1（miniflareのシミュレータ）が
- * 同時アクセスに耐えられず "database is locked: SQLITE_BUSY" で落ちるため、
- * 1回のクエリで全部取ってメモリ上のMapから引く形にしている。
- */
-export async function loadAllTowns(): Promise<Map<string, Town>> {
-  const rows = await (await db()).prepare(TOWN_QUERY).bind(DATA_YEAR).all<TownRow>();
-  return new Map(rows.results.map((r: TownRow) => [String(r.key), rowToTown(r)]));
-}
 
