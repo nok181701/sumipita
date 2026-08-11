@@ -29,9 +29,8 @@ jobs:
       - name: Typecheck
         run: npx tsc --noEmit
       - name: Build
-        # POPULATE_MACHI_CACHE を付けないので /machi/[ward]/[town] は何も事前生成しない
-        # （既存のR2キャッシュはビルドIDが固定なのでそのまま生き続ける）。
-        # 全件生成・R2書き込みは populate-machi-cache.yml を手動実行する。
+        # /machi/[ward] と /machi/[ward]/[town] は何も事前生成しない。
+        # 初回アクセス時にD1へ問い合わせて生成し、そのままR2にキャッシュされる。
         run: npx opennextjs-cloudflare build
       - name: Apply D1 migrations
         # 適用済みかどうかはD1側の d1_migrations テーブルが持っているので、

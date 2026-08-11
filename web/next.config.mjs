@@ -1,18 +1,21 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
-  // /machi/[ward]/[town] を3,142件 generateStaticParams で並列にビルドすると
-  // ローカルD1（miniflareのシミュレータ）が同時アクセスに耐えられず落ちるため、直列にする。
-  experimental: {
-    cpus: 1,
-  },
-  // ビルドIDを固定する。デフォルトは毎ビルドでランダムな値になり、それがR2の
-  // incremental cacheのキー（prefix/buildId/hash）に入るため、固定しないと
-  // 通常のコードpushのたびにキャッシュの参照先が変わって404の原因になる
-  // （populate-machi-cache.ymlで書き込んだキャッシュも通常deployで読めなくなる）。
-  // 変更すると既存のR2キャッシュが全部読めなくなるので、変えるときは
-  // populate-machi-cache.ymlを再実行すること。
-  generateBuildId: async () => "machi-cache-v1",
+  // buildIdはNext.jsのデフォルト（毎ビルドでランダム）に任せる。
+  //
+  // 以前はR2 incremental cacheのキー（prefix/buildId/hash）を固定するために
+  // buildIdも固定していたが、それだとコードを変えるデプロイをしたときに
+  // 「古いビルドのJSチャンクを参照したままのR2キャッシュ」が生き残ってしまい、
+  // そのページに新規アクセスが来ると存在しないチャンクを読みに行って
+  // クライアント側エラーになる不具合が実際に発生した（chunkのファイル名は
+  // ビルドのたびに変わるが、Cloudflare Workersのアセットは各デプロイの
+  // 内容に置き換わるため）。
+  //
+  // buildIdをランダムにすると、デプロイのたびに古いbuildId配下のキャッシュは
+  // 誰からも参照されなくなる（新しいbuildIdでしか引かれない）ため、この不整合が
+  // 起きなくなる。参照されなくなった古いキャッシュはR2バケットのライフサイクル
+  // ルール（30日で自動削除、wrangler r2 bucket lifecycleで設定）に任せて
+  // 自然に消える。
 };
 
 export default nextConfig;

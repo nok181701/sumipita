@@ -9,16 +9,16 @@
 ### レンダリング
 
 - **一覧ページ** (`/`, `/api/town`): Workers上でSSR。従来通り毎リクエストRemote D1を参照して生成する。
-- **詳細ページ** (`/machi/[ward]/[town]`、3,142ページ): SSG。R2 incremental cache (`sumipita-cache`) の静的HTML/RSCを配信する。キャッシュMISS時のみD1から生成しR2へ書き込むフォールバック方式（`revalidate`はしていないので、生成後はそのまま固定＝ISRではない）。
+- **区一覧ページ** (`/machi/[ward]`、23ページ) / **詳細ページ** (`/machi/[ward]/[town]`、3,142ページ): SSG。R2 incremental cache (`sumipita-cache`) の静的HTML/RSCを配信する。ビルド時には1件も事前生成せず、初回アクセス（キャッシュMISS）時にD1から生成してR2へ書き込むフォールバック方式。既定の鮮度（300秒）を過ぎるとISRのstale-while-revalidateで裏側で再生成される。
 
 ### Workers / D1 / R2 / CIの役割
 
 - **Workers**: Next.js (OpenNext) 本体。一覧ページのSSRと、詳細ページのR2キャッシュ読み書きを担当。
 - **D1**: `sumipita` DB。一覧ページは毎回、詳細ページはキャッシュMISS時のみ問い合わせる。
-- **R2**: バケット。詳細ページの静的ページを保持（90日で自動削除のライフサイクルルール設定済み）。
-- **CI (GitHub Actions)**: `deploy.yml`（mainへのpushで自動デプロイ。詳細ページのR2キャッシュには触らない）/ `load-data.yml`・`populate-machi-cache.yml`（手動実行、詳細は下記「データを更新する」）。
+- **R2**: バケット。区一覧・詳細ページの静的ページを保持（30日で自動削除のライフサイクルルール設定済み）。
+- **CI (GitHub Actions)**: `deploy.yml`（mainへのpushで自動デプロイ。区一覧・詳細ページのR2キャッシュには触らない）/ `load-data.yml`（手動実行、詳細は下記「データを更新する」）。
 
-> R2に置く静的ファイルは`next.config.mjs`の`generateBuildId`でビルドIDを固定してある。固定しないとコードをpushするたびにキャッシュの参照先が変わり、`populate-machi-cache.yml`で作ったキャッシュも読めなくなるため。ビルドIDを変える場合は`populate-machi-cache.yml`を再実行すること。
+> R2に置く静的ファイルは`next.config.mjs`の`generateBuildId`でビルドIDを固定してある。固定しないとコードをpushするたびにキャッシュの参照先が変わって404の原因になる。ただし固定していても、コードを変えるデプロイをすると「古いビルドのJSチャンクを参照したままのR2キャッシュ」が残り、そのページに新規アクセスが来た瞬間だけ壊れて見える不具合が実際に発生した（該当ページへ再アクセスすれば、その場でオンデマンド生成され直して直る）。
 
 ## 実行
 
@@ -54,9 +54,9 @@ git push
 
 1. push → `deploy.yml`が自動デプロイ
 2. GitHub Actions → **Load D1 Data** を手動実行 → Remote D1へmigrations+seedを投入
-3. GitHub Actions → **Populate Machi Cache** を手動実行 → 詳細ページ3,142件を使い捨てLocal D1でSSGビルドし、Remote R2へ一括書き込み
 
-（一度R2の設定を忘れてSSG化し、本番で全ページ404にしたことがある。デプロイ後は
-`curl -I` で `x-nextjs-cache: HIT` になっているか確認すること。）
+区一覧・詳細ページは初回アクセス時にオンデマンドで生成されるので、上記2ステップだけで
+新しいデータが反映される（キャッシュの手動再生成は不要）。ページごとに最初の1回だけ
+生成が走り、以降はR2キャッシュから配信される。
 
 ローカルで本番相当を見る: `cd web && npm run preview`
