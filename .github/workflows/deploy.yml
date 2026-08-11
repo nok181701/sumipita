@@ -28,12 +28,26 @@ jobs:
         run: npm ci
       - name: Typecheck
         run: npx tsc --noEmit
+      - name: Seed local D1 for build
+        # /machi/[ward]（23件）・/machi/[ward]/[town]（3,142件）の全件事前生成のため、
+        # ビルド中にD1へ問い合わせられるよう、ここだけの使い捨てローカルD1に
+        # seed/data.sqlを流し込む（本番Remote D1には触れない）。
+        run: |
+          npx wrangler d1 execute sumipita --local --file=migrations/0001_init.sql
+          npx wrangler d1 execute sumipita --local --file=seed/data.sql
       - name: Build
-        # /machi/[ward] と /machi/[ward]/[town] は何も事前生成しない（速いデプロイを優先）。
-        # 初回アクセス時にD1へ問い合わせて生成し、そのままR2にキャッシュされる。
-        # 全件事前生成したいときは prerender-machi.yml を手動実行する
-        # （このワークフローとは別に、それ自身でwrangler deployまで行う）。
+        # PRERENDER_ALL_MACHI=1で全件事前生成する。このあとの Populate remote R2 cache と
+        # Deploy は同じビルド成果物を使うので、R2に置くHTMLとWorkerが配信するJSチャンクは
+        # 必ず一致する（過去に生成用ビルドとデプロイ用ビルドが別物だったことで
+        # チャンク不一致が起きた経緯があるので、分離しないこと）。
         run: npx opennextjs-cloudflare build
+        env:
+          PRERENDER_ALL_MACHI: "1"
+      - name: Populate remote R2 cache
+        run: npx opennextjs-cloudflare populateCache remote
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
       - name: Apply D1 migrations
         # 適用済みかどうかはD1側の d1_migrations テーブルが持っているので、
         # 毎回実行しても未適用のものだけが流れる。
