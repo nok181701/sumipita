@@ -2,6 +2,7 @@
 
 import { signIn, useSession } from "next-auth/react";
 import { useEffect, useRef, useState } from "react";
+import { getFavorited, setFavorited as setFavoritedAction } from "@/app/actions/favorites";
 
 function HeartIcon({ filled }: { filled: boolean }) {
   return (
@@ -38,11 +39,9 @@ export default function FavoriteButton({ townKey }: { townKey: string }) {
   useEffect(() => {
     if (status !== "authenticated") return;
     let cancelled = false;
-    fetch(`/api/favorites?key=${encodeURIComponent(townKey)}`)
-      .then((res) => (res.ok ? res.json() : null))
-      .then((data: { favorited: boolean } | null) => {
-        if (!cancelled && data) setFavorited(data.favorited);
-      });
+    getFavorited(townKey).then((v) => {
+      if (!cancelled) setFavorited(v);
+    });
     return () => {
       cancelled = true;
     };
@@ -68,16 +67,7 @@ export default function FavoriteButton({ townKey }: { townKey: string }) {
     const next = !favorited;
     setFavorited(next);
     try {
-      const res = next
-        ? await fetch("/api/favorites", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ key: townKey }),
-          })
-        : await fetch(`/api/favorites?key=${encodeURIComponent(townKey)}`, {
-            method: "DELETE",
-          });
-      if (!res.ok) throw new Error("failed");
+      await setFavoritedAction(townKey, next);
       showToast(next ? "お気に入りに追加しました" : "お気に入りを解除しました");
     } catch {
       setFavorited(!next);
