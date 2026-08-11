@@ -17,13 +17,17 @@ const wardBySlug: Record<string, string> = Object.fromEntries(
   Object.entries(machiSlugs.wardSlug).map(([ward, slug]) => [slug, ward]),
 );
 
-// 23区固定で、年1回のデータ更新以外で増減しないので毎回のビルドで全件プリレンダーする
-// （町丁目ページと違って23件しかないので、専用のキャッシュ運用は不要）
+// /machi/[ward]/[town] と同じ理由で、通常デプロイのビルドはD1につながる
+// ローカルD1（miniflareのシミュレータ）を用意していないため空リストを返す
+// （POPULATE_MACHI_CACHE=1 のときだけ全件事前生成し、R2キャッシュへ書き込む）。
+// それ以外は dynamicParams=true により初回アクセス時にD1へ問い合わせて生成し、
+// そのままR2に積まれる。
 export function generateStaticParams() {
+  if (process.env.POPULATE_MACHI_CACHE !== "1") return [];
   return Object.values(machiSlugs.wardSlug).map((wardSlug) => ({ ward: wardSlug }));
 }
 
-export const dynamicParams = false;
+export const dynamicParams = true;
 
 type Params = { ward: string };
 
