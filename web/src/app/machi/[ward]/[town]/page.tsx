@@ -4,8 +4,9 @@ import Link from "next/link";
 import AuthButton from "@/components/AuthButton";
 import Logo from "@/components/Logo";
 import ScoreCard from "@/components/ScoreCard";
-import { loadTown } from "@/server/db";
+import { loadTown, loadAllTowns } from "@/server/db";
 import { keyFromSlugs } from "@/lib/machiSlugs";
+import machiSlugs from "@/lib/machiSlugs.json";
 import { buildAxisViews } from "@/lib/axes";
 import type { Town } from "@/lib/types";
 
@@ -51,23 +52,39 @@ function buildJsonLd(data: Town, ward: string, town: string) {
   return [place, breadcrumb];
 }
 
-// ビルド時には1件も事前生成しない。3,142件をD1に問い合わせるコストに見合わないうえ、
-// R2キャッシュに事前生成したページを置いても、実際にデプロイされるチャンクと
-// 一致する保証がなく壊れる（詳細はgit履歴参照）。dynamicParams=trueにより、
-// アクセスされた時点でD1へ問い合わせて生成し、そのままR2にキャッシュされる
-// （本来のISRのフォールバック動作。生成は必ずデプロイ済みの実コードで行われるので、
-// 参照するチャンクは常に実在するものと一致する）。
+// PRERENDER_ALL_MACHI=1 のときだけ全件事前生成する。これはdeploy.ymlの中で
+// 「実際にwrangler deployする、まさにそのビルド」に対してのみ付与される。
+// 生成に使うビルドと実際にデプロイされるビルドが同一なので、事前生成したHTMLが
+// 参照するJSチャンクは必ず実在するものと一致する（過去に生成用ビルドとデプロイ用
+// ビルドが別物だったことでチャンク不一致が起きた経緯があるので、分離しないこと）。
+// このフラグが立っていない通常のビルド（ローカル開発など）では1件も事前生成しない。
+// dynamicParams=trueにより、事前生成されなかったページもアクセス時にD1へ
+// 問い合わせて生成し、そのままR2にキャッシュされる（ISRのフォールバック動作）。
 export function generateStaticParams() {
-  return [];
+  if (process.env.PRERENDER_ALL_MACHI !== "1") return [];
+  return Object.entries(machiSlugs.townSlug).map(([key, townSlug]) => {
+    const ward = key.split("|")[0];
+    const wardSlug = (machiSlugs.wardSlug as Record<string, string>)[ward];
+    return { ward: wardSlug, town: townSlug };
+  });
 }
 
 export const dynamicParams = true;
 
 type Params = { ward: string; town: string };
 
+// PRERENDER_ALL_MACHI=1 の全件ビルド時だけ使う、1回きりの全件取得（db.tsのloadAllTowns参照）。
+let allTownsPromise: ReturnType<typeof loadAllTowns> | null = null;
+
 async function getTown({ ward, town }: Params) {
   const key = keyFromSlugs(ward, town);
   if (!key) return null;
+
+  if (process.env.PRERENDER_ALL_MACHI === "1") {
+    if (!allTownsPromise) allTownsPromise = loadAllTowns();
+    return (await allTownsPromise).get(key) ?? null;
+  }
+
   return loadTown(key);
 }
 

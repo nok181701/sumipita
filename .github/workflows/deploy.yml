@@ -29,8 +29,10 @@ jobs:
       - name: Typecheck
         run: npx tsc --noEmit
       - name: Build
-        # /machi/[ward] と /machi/[ward]/[town] は何も事前生成しない。
+        # /machi/[ward] と /machi/[ward]/[town] は何も事前生成しない（速いデプロイを優先）。
         # 初回アクセス時にD1へ問い合わせて生成し、そのままR2にキャッシュされる。
+        # 全件事前生成したいときは prerender-machi.yml を手動実行する
+        # （このワークフローとは別に、それ自身でwrangler deployまで行う）。
         run: npx opennextjs-cloudflare build
       - name: Apply D1 migrations
         # 適用済みかどうかはD1側の d1_migrations テーブルが持っているので、

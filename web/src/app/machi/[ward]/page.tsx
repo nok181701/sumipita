@@ -17,10 +17,10 @@ const wardBySlug: Record<string, string> = Object.fromEntries(
   Object.entries(machiSlugs.wardSlug).map(([ward, slug]) => [slug, ward]),
 );
 
-// /machi/[ward]/[town] と同じ理由で、ビルド時には1件も事前生成しない。
-// dynamicParams=true により初回アクセス時にD1へ問い合わせて生成し、そのままR2にキャッシュされる。
+// /machi/[ward]/[town] と同じ理由・同じフラグ（PRERENDER_ALL_MACHI=1）でだけ全件事前生成する。
 export function generateStaticParams() {
-  return [];
+  if (process.env.PRERENDER_ALL_MACHI !== "1") return [];
+  return Object.values(machiSlugs.wardSlug).map((wardSlug) => ({ ward: wardSlug }));
 }
 
 export const dynamicParams = true;
