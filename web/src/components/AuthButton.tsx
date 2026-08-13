@@ -82,6 +82,13 @@ export default function AuthButton() {
             >
               お気に入り
             </Link>
+            <Link
+              href="/account"
+              onClick={() => setOpen(false)}
+              className="block w-full border-t border-line px-3 py-2 text-left text-[11px] text-ink transition-colors hover:bg-aqua-50"
+            >
+              アカウント
+            </Link>
             <button
               onClick={() => signOut()}
               className="block w-full border-t border-line px-3 py-2 text-left text-[11px] text-ink transition-colors hover:bg-aqua-50"
