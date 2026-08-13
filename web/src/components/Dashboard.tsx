@@ -129,6 +129,13 @@ export default function Dashboard({ meta }: { meta: IndexFile }) {
             >
               プライバシーポリシー
             </Link>
+            <span className="mx-2 text-line">|</span>
+            <Link
+              href="/terms"
+              className="text-[13px] font-medium text-aqua-700 underline decoration-aqua-200 underline-offset-2 hover:text-aqua-600"
+            >
+              利用規約
+            </Link>
           </div>
 
           <footer className="rounded-card border border-line bg-white/70 p-4 text-[11px] leading-relaxed text-muted">

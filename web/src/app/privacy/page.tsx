@@ -1,28 +1,12 @@
 import Link from "next/link";
 import type { Metadata } from "next";
+import LegalSection from "@/components/LegalSection";
 
 export const metadata: Metadata = {
   title: "プライバシーポリシー",
 };
 
 const ENACTED_DATE = "2026年8月13日";
-
-function Section({
-  title,
-  children,
-}: {
-  title: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <section className="rounded-card border border-line bg-white p-5 shadow-card">
-      <h2 className="text-base font-bold tracking-tight text-ink">{title}</h2>
-      <div className="mt-2 space-y-2 text-[13px] leading-relaxed text-ink">
-        {children}
-      </div>
-    </section>
-  );
-}
 
 export default function PrivacyPage() {
   return (
@@ -46,7 +30,7 @@ export default function PrivacyPage() {
       </p>
 
       <div className="mt-4 space-y-3">
-        <Section title="1. 取得する情報">
+        <LegalSection title="1. 取得する情報">
           <p>
             本サービスへのログインには、Googleアカウントによる認証(Googleログイン)を利用しており、Google社から以下の情報を取得します。
           </p>
@@ -62,9 +46,9 @@ export default function PrivacyPage() {
             このほか、本サービスはCloudflare上で稼働しており、アクセス時のIPアドレスやブラウザ情報等が、インフラ提供事業者(Cloudflare,
             Inc.)によりアクセスログとして自動的に記録されます。
           </p>
-        </Section>
+        </LegalSection>
 
-        <Section title="2. 利用目的">
+        <LegalSection title="2. 利用目的">
           <p>取得した情報は、以下の目的の範囲内で利用します。</p>
           <ul className="list-disc space-y-1 pl-5">
             <li>ログイン認証・本人確認</li>
@@ -74,9 +58,9 @@ export default function PrivacyPage() {
               サービス改善のための分析(実施する場合は本ポリシーを改定のうえお知らせします)
             </li>
           </ul>
-        </Section>
+        </LegalSection>
 
-        <Section title="3. 第三者提供・委託">
+        <LegalSection title="3. 第三者提供・委託">
           <p>
             当方は、法令に基づく場合を除き、取得した個人情報をご本人の同意なく第三者に提供しません。ただし、以下の外部サービスに情報の取り扱いを委託しています。
           </p>
@@ -87,15 +71,15 @@ export default function PrivacyPage() {
           <p>
             これら委託先における情報の取り扱いは、各社が定めるプライバシーポリシーに準じます。
           </p>
-        </Section>
+        </LegalSection>
 
-        <Section title="4. Cookieについて">
+        <LegalSection title="4. Cookieについて">
           <p>
             本サービスは、ログイン状態を維持するために必要なCookieを使用します。現時点で、アクセス解析や広告配信を目的としたCookieは使用していません。今後導入する場合は、本ポリシーを改定のうえお知らせします。
           </p>
-        </Section>
+        </LegalSection>
 
-        <Section title="5. 保管期間・削除">
+        <LegalSection title="5. 保管期間・削除">
           <p>
             取得した情報は、アカウントが存在する期間、本サービスの提供に必要な範囲で保管します。
           </p>
@@ -109,29 +93,29 @@ export default function PrivacyPage() {
             </Link>
             から、いつでもご自身でアカウント（お気に入り登録データを含む）を完全に削除できます。削除すると元に戻すことはできません。ページの操作でうまく削除できない場合は、下記のお問い合わせ窓口までご連絡ください。
           </p>
-        </Section>
+        </LegalSection>
 
-        <Section title="6. 開示・訂正・利用停止等の請求">
+        <LegalSection title="6. 開示・訂正・利用停止等の請求">
           <p>
             ご本人から、保有する個人情報の開示・訂正・削除・利用停止等を求められた場合、法令に従い、ご本人確認のうえ対応します。
           </p>
-        </Section>
+        </LegalSection>
 
-        <Section title="7. お問い合わせ窓口">
+        <LegalSection title="7. お問い合わせ窓口">
           <p>
             本ポリシーおよび個人情報の取り扱いに関するお問い合わせ窓口は、現在準備中です。ご用意でき次第、本ページに掲載します。
           </p>
-        </Section>
+        </LegalSection>
 
-        <Section title="8. 本ポリシーの変更">
+        <LegalSection title="8. 本ポリシーの変更">
           <p>
             本ポリシーの内容は、法令の変更やサービス内容の変更等に応じて、予告なく改定することがあります。重要な変更を行う場合は、本サービス内でお知らせします。
           </p>
-        </Section>
+        </LegalSection>
 
-        <Section title="9. 準拠法">
+        <LegalSection title="9. 準拠法">
           <p>本ポリシーの解釈にあたっては、日本法を準拠法とします。</p>
-        </Section>
+        </LegalSection>
       </div>
     </div>
   );
