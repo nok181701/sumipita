@@ -7,6 +7,9 @@ declare namespace Cloudflare {
     AUTH_GOOGLE_ID: string;
     AUTH_GOOGLE_SECRET: string;
     AUTH_SECRET: string;
+    UPSTASH_REDIS_REST_URL: string;
+    UPSTASH_REDIS_REST_TOKEN: string;
+    RATE_LIMIT_EXEMPT_EMAILS: string;
   }
 }
 

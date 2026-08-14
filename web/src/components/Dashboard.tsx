@@ -21,11 +21,20 @@ const MapView = dynamic(() => import("./MapView"), {
  * 詳細は区ごとに分割して取得する。
  * D1 + Workers に移行したら、この fetch を API 呼び出しに差し替えるだけで済む構成にしている。
  */
+const RESET_FORMAT = new Intl.DateTimeFormat("ja-JP", {
+  timeZone: "Asia/Tokyo",
+  month: "numeric",
+  day: "numeric",
+  hour: "numeric",
+  minute: "numeric",
+});
+
 export default function Dashboard({ meta }: { meta: IndexFile }) {
   const [selected, setSelected] = useState<string | null>(null);
   const [town, setTown] = useState<Town | null>(null);
   const [cache] = useState(() => new Map<string, Town>());
   const [loading, setLoading] = useState(false);
+  const [rateLimitReset, setRateLimitReset] = useState<number | null>(null);
 
   // 詳細はD1から1件ずつ取る。区ごとのJSONを丸ごと落とす必要がなくなった。
   const load = useCallback(
@@ -34,11 +43,18 @@ export default function Dashboard({ meta }: { meta: IndexFile }) {
       const hit = cache.get(key);
       if (hit) {
         setTown(hit);
+        setRateLimitReset(null);
         return;
       }
       setLoading(true);
       try {
         const res = await fetch(`/api/town?key=${encodeURIComponent(key)}`);
+        if (res.status === 429) {
+          const body = await res.json().catch(() => null);
+          setTown(null);
+          setRateLimitReset(typeof body?.reset === "number" ? body.reset : null);
+          return;
+        }
         if (!res.ok) {
           setTown(null);
           return;
@@ -46,6 +62,7 @@ export default function Dashboard({ meta }: { meta: IndexFile }) {
         const t = (await res.json()) as Town;
         cache.set(key, t);
         setTown(t);
+        setRateLimitReset(null);
       } finally {
         setLoading(false);
       }
@@ -88,6 +105,15 @@ export default function Dashboard({ meta }: { meta: IndexFile }) {
         </p>
       </header>
 
+      {rateLimitReset !== null && (
+        <div className="mb-4 rounded-card border border-amber-300 bg-amber-50 p-4 text-center text-sm shadow-card">
+          <p className="font-medium text-ink">本日の詳細閲覧の上限に達しました</p>
+          <p className="mt-1 text-muted">
+            次に見られるのは {RESET_FORMAT.format(new Date(rateLimitReset))} 以降です。
+          </p>
+        </div>
+      )}
+
       <div className="flex flex-col gap-4 lg:flex-row">
         <aside className="relative z-30 rounded-card border border-line bg-white shadow-card lg:sticky lg:top-4 lg:flex lg:h-[calc(100vh-2rem)] lg:w-[350px] lg:shrink-0 lg:flex-col lg:overflow-hidden">
           <TownSearch
@@ -106,7 +132,7 @@ export default function Dashboard({ meta }: { meta: IndexFile }) {
             onSelect={load}
           />
 
-          {loading && !town && (
+          {loading && !town && !rateLimitReset && (
             <div className="rounded-card border border-line bg-white p-8 text-center text-sm text-muted shadow-card">
               読み込み中…
             </div>
