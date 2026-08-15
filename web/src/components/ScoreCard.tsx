@@ -30,7 +30,7 @@ function StatusChip({ status }: { status: AxisView["status"] }) {
 }
 
 function AxisRow({ view }: { view: AxisView }) {
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState(true);
   const meta = AXES.find((a) => a.id === view.id)!;
   const color = scoreColor(view.score);
 
@@ -91,7 +91,10 @@ function AxisRow({ view }: { view: AxisView }) {
       </button>
 
       {open && (
-        <div className="mt-3 rounded-xl bg-white/80 p-3">
+        <div className="mt-3 rounded-xl border border-aqua-200 bg-white p-3 shadow-sm">
+          <span className="mb-2 inline-block rounded-full bg-aqua-500 px-2 py-0.5 text-[10px] font-semibold text-white">
+            実際の数値
+          </span>
           <p className="mb-2 text-[11.5px] leading-relaxed text-muted">
             {meta.what}
           </p>
@@ -103,14 +106,16 @@ function AxisRow({ view }: { view: AxisView }) {
           >
             {view.label}の判定基準を詳しく見る →
           </a>
-          <dl className="grid grid-cols-2 gap-x-5 gap-y-1.5 text-[11.5px] sm:grid-cols-3">
+          <dl className="grid grid-cols-1 gap-x-5 gap-y-1.5 text-[11.5px] sm:grid-cols-2 md:grid-cols-3">
             {view.evidence.map((e: { label: string; value: string }) => (
               <div
                 key={e.label}
-                className="flex justify-between gap-2 border-b border-line pb-1"
+                className="flex items-baseline justify-between gap-2 border-b border-line pb-1"
               >
                 <dt className="text-muted">{e.label}</dt>
-                <dd className="tabular-nums font-semibold">{e.value}</dd>
+                <dd className="shrink-0 whitespace-nowrap tabular-nums font-semibold">
+                  {e.value}
+                </dd>
               </div>
             ))}
           </dl>
