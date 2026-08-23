@@ -69,8 +69,8 @@ export async function createCheckoutSession(
       ? { customer: existing.stripe_customer_id }
       : { customer_email: email }),
     line_items: [{ price: env.STRIPE_PRICE_ID, quantity: 1 }],
-    success_url: `${baseUrl}/account?checkout=success`,
-    cancel_url: `${baseUrl}/account?checkout=cancelled`,
+    success_url: `${baseUrl}/?checkout=success`,
+    cancel_url: `${baseUrl}/?checkout=cancelled`,
   });
   if (!session.url) throw new Error("stripe checkout session has no url");
   return session.url;
@@ -82,7 +82,7 @@ export async function createBillingPortalSession(userId: string, baseUrl: string
   const stripe = await stripeClient();
   const portal = await stripe.billingPortal.sessions.create({
     customer: sub.stripe_customer_id,
-    return_url: `${baseUrl}/account`,
+    return_url: baseUrl,
   });
   return portal.url;
 }

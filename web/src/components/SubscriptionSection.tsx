@@ -1,16 +1,14 @@
 "use client";
 
 import { useState } from "react";
-import { signIn } from "next-auth/react";
 import { openBillingPortal, startCheckout } from "@/app/actions/subscription";
 
 type Props = {
-  isLoggedIn: boolean;
   isPremium: boolean;
   currentPeriodEnd: string | null;
 };
 
-export default function SubscriptionSection({ isLoggedIn, isPremium, currentPeriodEnd }: Props) {
+export default function SubscriptionSection({ isPremium, currentPeriodEnd }: Props) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -29,19 +27,7 @@ export default function SubscriptionSection({ isLoggedIn, isPremium, currentPeri
     <div className="rounded-card border border-line bg-white p-5 shadow-card">
       <p className="text-[13px] font-semibold text-ink">プレミアムプラン</p>
 
-      {!isLoggedIn ? (
-        <>
-          <p className="mt-1.5 text-[12px] leading-relaxed text-muted">
-            プレミアムプランへの登録にはログインが必要です。
-          </p>
-          <button
-            onClick={() => signIn("google", { callbackUrl: "/account" })}
-            className="mt-3 rounded-full bg-aqua-500 px-4 py-1.5 text-[12px] font-medium text-white transition-opacity hover:opacity-90"
-          >
-            Googleでログイン
-          </button>
-        </>
-      ) : isPremium ? (
+      {isPremium ? (
         <>
           <p className="mt-1.5 text-[12px] leading-relaxed text-muted">
             現在プレミアムプランをご利用中です。

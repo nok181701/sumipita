@@ -122,14 +122,7 @@ export default function TermsPage() {
 
         <LegalSection title="第9条(退会)">
           <p>
-            利用者は、
-            <Link
-              href="/account"
-              className="text-aqua-700 underline decoration-aqua-200 underline-offset-2 hover:text-aqua-600"
-            >
-              アカウントページ
-            </Link>
-            から、いつでも本サービスから退会し、アカウントに関するデータを削除することができます。
+            利用者は、画面右上のアカウントアイコンから、いつでも本サービスから退会し、アカウントに関するデータを削除することができます。
           </p>
         </LegalSection>
 

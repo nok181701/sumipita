@@ -103,24 +103,9 @@ export default function Dashboard({ meta, isPremium, currentPeriodEnd }: Props) 
             </h1>
           </div>
           <div className="flex items-center gap-4">
-            {isLoggedIn && (
-              <Link
-                href="/premium"
-                className="text-[13px] font-medium text-aqua-700 underline decoration-aqua-200 underline-offset-2 hover:text-aqua-600"
-              >
-                プレミアム
-              </Link>
-            )}
-            <AuthButton />
+            <AuthButton isPremium={isPremium} currentPeriodEnd={currentPeriodEnd} />
           </div>
         </div>
-        <p className="mt-2 max-w-2xl text-[13.5px] leading-relaxed lg:hidden">
-          引越し先を決める前に、
-          <strong className="font-semibold">
-            治安・洪水・地盤（液状化）・高潮
-          </strong>
-          を公的データで町丁目ごとにサクッと確認できます。
-        </p>
         <p className="mt-2 hidden max-w-2xl text-[13.5px] leading-relaxed lg:block">
           治安、洪水、地盤（液状化）、高潮を町丁目ごとに調べました。
           <br />
@@ -140,13 +125,8 @@ export default function Dashboard({ meta, isPremium, currentPeriodEnd }: Props) 
             次に見られるのは {RESET_FORMAT.format(new Date(rateLimitReset))} 以降です。
           </p>
           {isLoggedIn && (
-            <p className="mt-2">
-              <Link
-                href="/premium"
-                className="text-[13px] font-medium text-aqua-700 underline decoration-aqua-200 underline-offset-2 hover:text-aqua-600"
-              >
-                プレミアムなら無制限に見られます →
-              </Link>
+            <p className="mt-2 text-[13px] font-medium text-aqua-700">
+              プレミアムなら無制限に見られます。右上のアイコンから登録できます。
             </p>
           )}
         </div>
@@ -177,38 +157,6 @@ export default function Dashboard({ meta, isPremium, currentPeriodEnd }: Props) 
           )}
           {town && <ScoreCard town={town} headingLevel="h2" />}
 
-          <div className="rounded-card border border-line bg-white p-4 text-center shadow-card">
-            <Link
-              href="/criteria"
-              target="_blank"
-              rel="noreferrer noopener"
-              className="text-[13px] font-medium text-aqua-700 underline decoration-aqua-200 underline-offset-2 hover:text-aqua-600"
-            >
-              判定基準を見る
-            </Link>
-            <span className="mx-2 text-line">|</span>
-            <Link
-              href="/privacy"
-              className="text-[13px] font-medium text-aqua-700 underline decoration-aqua-200 underline-offset-2 hover:text-aqua-600"
-            >
-              プライバシーポリシー
-            </Link>
-            <span className="mx-2 text-line">|</span>
-            <Link
-              href="/terms"
-              className="text-[13px] font-medium text-aqua-700 underline decoration-aqua-200 underline-offset-2 hover:text-aqua-600"
-            >
-              利用規約
-            </Link>
-            <span className="mx-2 text-line">|</span>
-            <Link
-              href="/tokushoho"
-              className="text-[13px] font-medium text-aqua-700 underline decoration-aqua-200 underline-offset-2 hover:text-aqua-600"
-            >
-              特定商取引法に基づく表記
-            </Link>
-          </div>
-
           <footer className="rounded-card border border-line bg-white/70 p-4 text-[11px] leading-relaxed text-muted">
             <p className="mb-1.5 font-semibold text-ink">
               このアプリが見ているデータ（{meta.data_year}
@@ -238,6 +186,33 @@ export default function Dashboard({ meta, isPremium, currentPeriodEnd }: Props) 
               件あります。
             </p>
           </footer>
+
+          <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-1.5 py-2 text-center text-[12px] text-muted">
+            <Link
+              href="/criteria"
+              target="_blank"
+              rel="noreferrer noopener"
+              className="transition-colors hover:text-aqua-600 hover:underline"
+            >
+              判定基準を見る
+            </Link>
+            <Link href="/privacy" className="transition-colors hover:text-aqua-600 hover:underline">
+              プライバシーポリシー
+            </Link>
+            <Link href="/terms" className="transition-colors hover:text-aqua-600 hover:underline">
+              利用規約
+            </Link>
+            <Link
+              href="/tokushoho"
+              className="transition-colors hover:text-aqua-600 hover:underline"
+            >
+              特定商取引法に基づく表記
+            </Link>
+          </div>
+
+          <p className="pb-2 text-center text-[11px] text-muted">
+            © {new Date().getFullYear()} すみピタ
+          </p>
         </main>
       </div>
     </div>

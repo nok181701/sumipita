@@ -37,14 +37,7 @@ export default function TokushohoPage() {
 
         <LegalSection title="販売価格">
           <p>
-            プレミアムプランの料金は、
-            <Link
-              href="/account"
-              className="text-aqua-700 underline decoration-aqua-200 underline-offset-2 hover:text-aqua-600"
-            >
-              アカウントページ
-            </Link>
-            の登録画面（Stripeの決済画面）に表示される金額のとおりです（すべて税込)。
+            プレミアムプランの料金は、画面右上のアカウントアイコンから開く登録画面（Stripeの決済画面）に表示される金額のとおりです（すべて税込)。
           </p>
         </LegalSection>
 
@@ -68,14 +61,7 @@ export default function TokushohoPage() {
 
         <LegalSection title="解約・キャンセルについて">
           <p>
-            プレミアムプランは、
-            <Link
-              href="/account"
-              className="text-aqua-700 underline decoration-aqua-200 underline-offset-2 hover:text-aqua-600"
-            >
-              アカウントページ
-            </Link>
-            の「支払い管理」からいつでも解約できます。解約した場合、既にお支払いいただいた期間の途中であっても、日割りによる返金は行いません。解約後は、その時点で契約中の期間の終了をもってプレミアムプランの機能が利用できなくなります。
+            プレミアムプランは、画面右上のアカウントアイコンから開くメニューの「支払い管理」からいつでも解約できます。解約した場合、既にお支払いいただいた期間の途中であっても、日割りによる返金は行いません。解約後は、その時点で契約中の期間の終了をもってプレミアムプランの機能が利用できなくなります。
           </p>
         </LegalSection>
       </div>

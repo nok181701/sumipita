@@ -57,23 +57,25 @@ function AxisRow({ view }: { view: AxisView }) {
                 <span className="text-[11px] text-muted">/100</span>
               )}
             </div>
-            <span
-              className="mt-1 inline-block rounded-full px-2 py-0.5 text-[10px] font-medium"
-              style={{ background: scoreBg(view.score), color }}
-            >
-              {scoreLabelShort(view.score)}
-            </span>
+            {view.score !== null && (
+              <span
+                className="mt-1 inline-block rounded-full px-2 py-0.5 text-[10px] font-medium"
+                style={{ background: scoreBg(view.score), color }}
+              >
+                {scoreLabelShort(view.score)}
+              </span>
+            )}
           </div>
         </div>
 
-        <div className="mt-2.5 h-2 overflow-hidden rounded-full bg-white/80">
-          {view.score !== null && (
+        {view.score !== null && (
+          <div className="mt-2.5 h-2 overflow-hidden rounded-full bg-white/80">
             <div
               className="h-full rounded-full transition-all duration-500"
               style={{ width: `${view.score}%`, background: color }}
             />
-          )}
-        </div>
+          </div>
+        )}
 
         {view.statusNote && (
           <p
@@ -266,11 +268,6 @@ export default function ScoreCard({
   const Heading = headingLevel;
   const views = buildAxisViews(town);
   const typhoon = typhoonSpecific(town);
-  const best = views.filter((v) => v.score !== null && v.score >= 70);
-  const worst = views.filter((v) => v.score !== null && v.score < 40);
-  // 点が出ていない軸。ここを無視して「4つとも問題なし」と書くと、
-  // 調べていないだけの軸を「安全」に見せてしまう（高潮対象外の6区で必ず起きる）
-  const unknown = views.filter((v) => v.score === null);
 
   return (
     <section className="rounded-card border border-line bg-white p-5 shadow-card">
@@ -280,51 +277,9 @@ export default function ScoreCard({
             {town.ward}
             <span className="text-aqua-700">{town.town}</span>
           </Heading>
-          <p className="mt-1 text-[12px] text-muted">
-            いま {town.pop?.toLocaleString() ?? "—"}人 ・{" "}
-            {town.households?.toLocaleString() ?? "—"}世帯が暮らしています
-          </p>
         </div>
         <FavoriteButton townKey={town.key} />
       </header>
-
-      {/* 一言まとめ。総合点ではなく「どこが強くてどこが弱いか」を言う */}
-      {town.flags.scored && (
-        <p className="mb-4 rounded-2xl bg-aqua-50 px-3.5 py-2.5 text-[12.5px] leading-relaxed">
-          {worst.length > 0 ? (
-            <>
-              <strong className="font-semibold">
-                {worst.map((v) => v.label).join("と")}
-              </strong>
-              が23区の下位です。
-              {best.length > 0 && (
-                <>逆に{best.map((v) => v.label).join("と")}は良好。</>
-              )}
-              決める前に、弱いほうを一度自分の目で確かめておくと安心です。
-            </>
-          ) : unknown.length === 0 && best.length === 4 ? (
-            <>
-              4つとも実際に測ったうえで良好です。23区でこれを満たすのは22町丁目、
-              人口にして7.6万人分しかありません。
-            </>
-          ) : (
-            <>
-              大きく落ち込んでいる軸はありません。
-              {best.length > 0 && (
-                <>とくに{best.map((v) => v.label).join("と")}は良好です。</>
-              )}
-            </>
-          )}
-          {/* 点が出ていない軸を黙って除外しない。これを書かないと「調べていない」が
-              「問題なし」として読まれてしまう */}
-          {unknown.length > 0 && (
-            <span className="mt-1 block text-muted">
-              ただし{unknown.map((v) => v.label).join("と")}
-              は、この町丁目ではそもそも数値が出せていません。良い悪いの判断材料には入れないでください。
-            </span>
-          )}
-        </p>
-      )}
 
       {typhoon && (
         <Alert tone="warn" title="台風のときだけ弱い街です。">

@@ -1,9 +1,9 @@
 "use client";
 
-import Link from "next/link";
-import { signIn, signOut, useSession } from "next-auth/react";
-import { useEffect, useRef, useState } from "react";
+import { signIn, useSession } from "next-auth/react";
+import { useState } from "react";
 import PlanModal from "./PlanModal";
+import UserAvatar from "./UserAvatar";
 
 function GoogleIcon() {
   return (
@@ -28,6 +28,35 @@ function GoogleIcon() {
   );
 }
 
+const isDev = process.env.NODE_ENV !== "production";
+
+function DevLoginForm() {
+  const [email, setEmail] = useState("dev@example.com");
+
+  return (
+    <form
+      onSubmit={(e) => {
+        e.preventDefault();
+        if (email) void signIn("dev-login", { email });
+      }}
+      className="flex items-center gap-1"
+    >
+      <input
+        type="email"
+        value={email}
+        onChange={(e) => setEmail(e.target.value)}
+        className="relative -translate-y-2 w-32 rounded-full border border-dashed border-line px-2.5 py-1.5 text-[11px] text-ink"
+      />
+      <button
+        type="submit"
+        className="relative -translate-y-2 rounded-full border border-dashed border-line px-3 py-1.5 text-[11px] font-medium text-muted"
+      >
+        開発ログイン
+      </button>
+    </form>
+  );
+}
+
 type Props = {
   compact?: boolean;
   isPremium?: boolean;
@@ -40,18 +69,7 @@ export default function AuthButton({
   currentPeriodEnd = null,
 }: Props) {
   const { data: session, status } = useSession();
-  const [open, setOpen] = useState(false);
   const [modalOpen, setModalOpen] = useState(false);
-  const rootRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    if (!open) return;
-    const onClick = (e: MouseEvent) => {
-      if (!rootRef.current?.contains(e.target as Node)) setOpen(false);
-    };
-    document.addEventListener("click", onClick);
-    return () => document.removeEventListener("click", onClick);
-  }, [open]);
 
   if (status === "loading") {
     return <div className="h-7 w-7 animate-pulse rounded-full bg-aqua-100" />;
@@ -68,18 +86,7 @@ export default function AuthButton({
             aria-label={`${label}のプランを見る`}
             className="relative flex h-8 w-8 shrink-0 -translate-y-0.5 items-center justify-center rounded-full"
           >
-            {session.user.image ? (
-              <img
-                src={session.user.image}
-                alt=""
-                referrerPolicy="no-referrer"
-                className="h-8 w-8 rounded-full border border-line"
-              />
-            ) : (
-              <span className="flex h-8 w-8 items-center justify-center rounded-full bg-aqua-500 text-[11px] text-white">
-                {label.slice(0, 1)}
-              </span>
-            )}
+            <UserAvatar size={32} />
           </button>
           <PlanModal
             open={modalOpen}
@@ -94,55 +101,22 @@ export default function AuthButton({
     }
 
     return (
-      <div ref={rootRef} className="relative -translate-y-2">
+      <div className="relative -translate-y-2">
         <button
-          onClick={() => setOpen((v) => !v)}
+          onClick={() => setModalOpen(true)}
           className="flex items-center gap-1.5 rounded-full py-0.5 pl-0.5 pr-2 text-[11px] font-medium text-ink transition-colors hover:bg-aqua-50"
         >
-          {session.user.image ? (
-            <img
-              src={session.user.image}
-              alt=""
-              referrerPolicy="no-referrer"
-              className="h-6 w-6 shrink-0 rounded-full border border-line"
-            />
-          ) : (
-            <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-aqua-500 text-[10px] text-white">
-              {label.slice(0, 1)}
-            </span>
-          )}
+          <UserAvatar size={24} />
           <span className="max-w-[7rem] truncate">{label}</span>
         </button>
-
-        {open && (
-          <div className="absolute right-0 top-[calc(100%+6px)] z-40 w-44 overflow-hidden rounded-xl border border-line bg-white shadow-card">
-            {session.user.email && (
-              <p className="truncate px-3 py-2 text-[11px] text-muted">
-                {session.user.email}
-              </p>
-            )}
-            <Link
-              href="/favorites"
-              onClick={() => setOpen(false)}
-              className="block w-full border-t border-line px-3 py-2 text-left text-[11px] text-ink transition-colors hover:bg-aqua-50"
-            >
-              お気に入り
-            </Link>
-            <Link
-              href="/account"
-              onClick={() => setOpen(false)}
-              className="block w-full border-t border-line px-3 py-2 text-left text-[11px] text-ink transition-colors hover:bg-aqua-50"
-            >
-              アカウント
-            </Link>
-            <button
-              onClick={() => signOut()}
-              className="block w-full border-t border-line px-3 py-2 text-left text-[11px] text-ink transition-colors hover:bg-aqua-50"
-            >
-              ログアウト
-            </button>
-          </div>
-        )}
+        <PlanModal
+          open={modalOpen}
+          onClose={() => setModalOpen(false)}
+          userLabel={label}
+          userEmail={session.user.email}
+          isPremium={isPremium}
+          currentPeriodEnd={currentPeriodEnd}
+        />
       </div>
     );
   }
@@ -159,12 +133,15 @@ export default function AuthButton({
   }
 
   return (
-    <button
-      onClick={() => signIn("google")}
-      className="relative flex -translate-y-2 items-center gap-2 rounded-full border border-line bg-white px-3 py-1.5 text-[11px] font-medium text-ink shadow-sm transition-shadow hover:shadow-card"
-    >
-      <GoogleIcon />
-      Googleでログイン
-    </button>
+    <div className="flex items-center gap-2">
+      {isDev && <DevLoginForm />}
+      <button
+        onClick={() => signIn("google")}
+        className="relative flex -translate-y-2 items-center gap-2 rounded-full border border-line bg-white px-3 py-1.5 text-[11px] font-medium text-ink shadow-sm transition-shadow hover:shadow-card"
+      >
+        <GoogleIcon />
+        Googleでログイン
+      </button>
+    </div>
   );
 }
