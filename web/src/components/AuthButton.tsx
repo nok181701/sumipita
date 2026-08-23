@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { signIn, signOut, useSession } from "next-auth/react";
 import { useEffect, useRef, useState } from "react";
+import PlanModal from "./PlanModal";
 
 function GoogleIcon() {
   return (
@@ -27,9 +28,20 @@ function GoogleIcon() {
   );
 }
 
-export default function AuthButton() {
+type Props = {
+  compact?: boolean;
+  isPremium?: boolean;
+  currentPeriodEnd?: string | null;
+};
+
+export default function AuthButton({
+  compact = false,
+  isPremium = false,
+  currentPeriodEnd = null,
+}: Props) {
   const { data: session, status } = useSession();
   const [open, setOpen] = useState(false);
+  const [modalOpen, setModalOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -47,6 +59,40 @@ export default function AuthButton() {
 
   if (session?.user) {
     const label = session.user.name ?? session.user.email ?? "";
+
+    if (compact) {
+      return (
+        <>
+          <button
+            onClick={() => setModalOpen(true)}
+            aria-label={`${label}のプランを見る`}
+            className="relative flex h-8 w-8 shrink-0 -translate-y-0.5 items-center justify-center rounded-full"
+          >
+            {session.user.image ? (
+              <img
+                src={session.user.image}
+                alt=""
+                referrerPolicy="no-referrer"
+                className="h-8 w-8 rounded-full border border-line"
+              />
+            ) : (
+              <span className="flex h-8 w-8 items-center justify-center rounded-full bg-aqua-500 text-[11px] text-white">
+                {label.slice(0, 1)}
+              </span>
+            )}
+          </button>
+          <PlanModal
+            open={modalOpen}
+            onClose={() => setModalOpen(false)}
+            userLabel={label}
+            userEmail={session.user.email}
+            isPremium={isPremium}
+            currentPeriodEnd={currentPeriodEnd}
+          />
+        </>
+      );
+    }
+
     return (
       <div ref={rootRef} className="relative -translate-y-2">
         <button
@@ -98,6 +144,17 @@ export default function AuthButton() {
           </div>
         )}
       </div>
+    );
+  }
+
+  if (compact) {
+    return (
+      <button
+        onClick={() => signIn("google")}
+        className="relative -translate-y-0.5 rounded-xl bg-gray-100/80 px-4 py-2.5 text-xs font-extrabold text-ink transition-colors hover:bg-gray-100"
+      >
+        ログイン
+      </button>
     );
   }
 

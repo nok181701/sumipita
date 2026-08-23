@@ -2,6 +2,7 @@
 
 import dynamic from "next/dynamic";
 import Link from "next/link";
+import { useSession } from "next-auth/react";
 import { useCallback, useEffect, useState } from "react";
 import AuthButton from "./AuthButton";
 import Logo from "./Logo";
@@ -29,7 +30,15 @@ const RESET_FORMAT = new Intl.DateTimeFormat("ja-JP", {
   minute: "numeric",
 });
 
-export default function Dashboard({ meta }: { meta: IndexFile }) {
+type Props = {
+  meta: IndexFile;
+  isPremium: boolean;
+  currentPeriodEnd: string | null;
+};
+
+export default function Dashboard({ meta, isPremium, currentPeriodEnd }: Props) {
+  const { data: session } = useSession();
+  const isLoggedIn = !!session?.user;
   const [selected, setSelected] = useState<string | null>(null);
   const [town, setTown] = useState<Town | null>(null);
   const [cache] = useState(() => new Map<string, Town>());
@@ -76,15 +85,34 @@ export default function Dashboard({ meta }: { meta: IndexFile }) {
   }, []);
 
   return (
-    <div className="mx-auto max-w-6xl px-4 pb-10 pt-6">
+    <div className="mx-auto max-w-6xl px-4 pb-10 pt-20 lg:pt-6">
+      <div className="fixed inset-x-0 top-3 z-40 flex justify-center px-4 lg:hidden">
+        <div className="relative flex w-full max-w-2xl items-center justify-end rounded-card border border-line bg-white/85 p-2.5 shadow-card backdrop-blur-sm">
+          <h1 className="absolute left-1/2 -translate-x-1/2">
+            <Logo size={28} />
+          </h1>
+          <AuthButton compact isPremium={isPremium} currentPeriodEnd={currentPeriodEnd} />
+        </div>
+      </div>
+
       <header className="mb-4">
-        <div className="flex items-baseline justify-between gap-2.5">
+        <div className="hidden items-baseline justify-between gap-2.5 lg:flex">
           <div className="flex items-baseline gap-2.5">
             <h1>
               <Logo size={32} />
             </h1>
           </div>
-          <AuthButton />
+          <div className="flex items-center gap-4">
+            {isLoggedIn && (
+              <Link
+                href="/premium"
+                className="text-[13px] font-medium text-aqua-700 underline decoration-aqua-200 underline-offset-2 hover:text-aqua-600"
+              >
+                プレミアム
+              </Link>
+            )}
+            <AuthButton />
+          </div>
         </div>
         <p className="mt-2 max-w-2xl text-[13.5px] leading-relaxed lg:hidden">
           引越し先を決める前に、
@@ -111,6 +139,16 @@ export default function Dashboard({ meta }: { meta: IndexFile }) {
           <p className="mt-1 text-muted">
             次に見られるのは {RESET_FORMAT.format(new Date(rateLimitReset))} 以降です。
           </p>
+          {isLoggedIn && (
+            <p className="mt-2">
+              <Link
+                href="/premium"
+                className="text-[13px] font-medium text-aqua-700 underline decoration-aqua-200 underline-offset-2 hover:text-aqua-600"
+              >
+                プレミアムなら無制限に見られます →
+              </Link>
+            </p>
+          )}
         </div>
       )}
 

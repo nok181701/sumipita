@@ -51,6 +51,7 @@ export default async function AccountPage() {
           </div>
 
           <SubscriptionSection
+            isLoggedIn
             isPremium={isPremium}
             currentPeriodEnd={subscription?.current_period_end ?? null}
           />
