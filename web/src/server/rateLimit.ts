@@ -1,6 +1,7 @@
 import { Ratelimit } from "@upstash/ratelimit";
 import { Redis } from "@upstash/redis/cloudflare";
 import { getCloudflareContext } from "@opennextjs/cloudflare";
+import { isPremium } from "@/server/subscription";
 
 const TOWN_VIEW_LIMIT = 20;
 const TOWN_VIEW_WINDOW = "1 d";
@@ -15,7 +16,7 @@ type LimitResult = {
 /**
  * 詳細閲覧（/api/town）のレート制限。D1では持たず、UpstashのRESTベースRedisを使う
  * （Cloudflare Rate LimitingはIPベース・短時間窓が前提でユーザー単位の日次カウントに向かないため見送った）。
- * 現状はプレミアム区分がないため、除外リスト以外は全員に同じ上限をかける。
+ * 除外リスト・プレミアム会員以外は全員に同じ上限をかける。
  */
 async function getLimiter(): Promise<Ratelimit> {
   const { env } = await getCloudflareContext({ async: true });
@@ -46,9 +47,13 @@ function isExemptEmail(email: string | null | undefined, exemptList: string | un
 export async function checkTownViewLimit(
   ip: string,
   email: string | null | undefined,
+  userId: string | null | undefined,
 ): Promise<LimitResult> {
   const { env } = await getCloudflareContext({ async: true });
   if (isExemptEmail(email, env.RATE_LIMIT_EXEMPT_EMAILS)) {
+    return { success: true, limit: TOWN_VIEW_LIMIT, remaining: TOWN_VIEW_LIMIT, reset: 0 };
+  }
+  if (userId && (await isPremium(userId))) {
     return { success: true, limit: TOWN_VIEW_LIMIT, remaining: TOWN_VIEW_LIMIT, reset: 0 };
   }
 

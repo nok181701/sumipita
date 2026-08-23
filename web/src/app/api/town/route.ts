@@ -22,6 +22,7 @@ export async function GET(request: Request) {
     const { success, limit, remaining, reset } = await checkTownViewLimit(
       ip,
       session?.user?.email,
+      session?.user?.id,
     );
     if (!success) {
       return Response.json(

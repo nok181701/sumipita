@@ -4,6 +4,8 @@ import { auth } from "@/auth";
 import AuthButton from "@/components/AuthButton";
 import Logo from "@/components/Logo";
 import DeleteAccountSection from "@/components/DeleteAccountSection";
+import SubscriptionSection from "@/components/SubscriptionSection";
+import { getSubscription, isPremiumStatus } from "@/server/subscription";
 
 export const metadata: Metadata = {
   title: "アカウント",
@@ -13,6 +15,8 @@ export const dynamic = "force-dynamic";
 
 export default async function AccountPage() {
   const session = await auth();
+  const subscription = session?.user?.id ? await getSubscription(session.user.id) : null;
+  const isPremium = isPremiumStatus(subscription?.status);
 
   return (
     <div className="mx-auto max-w-3xl px-4 pb-10 pt-6">
@@ -45,6 +49,11 @@ export default async function AccountPage() {
               <p className="text-[12px] text-muted">{session.user.email}</p>
             )}
           </div>
+
+          <SubscriptionSection
+            isPremium={isPremium}
+            currentPeriodEnd={subscription?.current_period_end ?? null}
+          />
 
           <DeleteAccountSection />
         </div>

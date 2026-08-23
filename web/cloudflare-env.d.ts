@@ -10,6 +10,9 @@ declare namespace Cloudflare {
     UPSTASH_REDIS_REST_URL: string;
     UPSTASH_REDIS_REST_TOKEN: string;
     RATE_LIMIT_EXEMPT_EMAILS: string;
+    STRIPE_SECRET_KEY: string;
+    STRIPE_WEBHOOK_SECRET: string;
+    STRIPE_PRICE_ID: string;
   }
 }
 
