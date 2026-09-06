@@ -72,7 +72,15 @@ export default function AuthButton({
   const [modalOpen, setModalOpen] = useState(false);
 
   if (status === "loading") {
-    return <div className="h-7 w-7 animate-pulse rounded-full bg-aqua-100" />;
+    return (
+      <div
+        className={
+          compact
+            ? "h-8 w-8 animate-pulse rounded-full bg-aqua-100"
+            : "h-7 w-7 animate-pulse rounded-full bg-aqua-100"
+        }
+      />
+    );
   }
 
   if (session?.user) {
@@ -125,7 +133,7 @@ export default function AuthButton({
     return (
       <button
         onClick={() => signIn("google")}
-        className="relative -translate-y-0.5 rounded-xl bg-gray-100/80 px-4 py-2.5 text-xs font-extrabold text-ink transition-colors hover:bg-gray-100"
+        className="relative flex h-8 -translate-y-0.5 items-center rounded-xl bg-gray-100/80 px-4 text-xs font-extrabold text-ink transition-colors hover:bg-gray-100"
       >
         ログイン
       </button>
