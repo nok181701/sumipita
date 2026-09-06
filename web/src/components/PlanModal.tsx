@@ -4,6 +4,8 @@ import Link from "next/link";
 import { signOut } from "next-auth/react";
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
+import { getPlanPrice } from "@/app/actions/subscription";
+import type { PriceInfo } from "@/server/subscription";
 import DeleteAccountSection from "./DeleteAccountSection";
 import SubscriptionSection from "./SubscriptionSection";
 import UserAvatar from "./UserAvatar";
@@ -26,6 +28,7 @@ export default function PlanModal({
   currentPeriodEnd,
 }: Props) {
   const [visible, setVisible] = useState(false);
+  const [price, setPrice] = useState<PriceInfo | null>(null);
 
   useEffect(() => {
     if (!open) {
@@ -35,6 +38,11 @@ export default function PlanModal({
     const id = requestAnimationFrame(() => setVisible(true));
     return () => cancelAnimationFrame(id);
   }, [open]);
+
+  useEffect(() => {
+    if (!open || isPremium || price) return;
+    void getPlanPrice().then(setPrice).catch(() => {});
+  }, [open, isPremium, price]);
 
   useEffect(() => {
     if (!open) return;
@@ -80,39 +88,25 @@ export default function PlanModal({
             </div>
           </div>
 
-          <div className="mt-4 grid grid-cols-2 gap-2 text-[12px]">
-            <div
-              className={`rounded-2xl p-3 ${!isPremium ? "bg-aqua-50" : "bg-line/40"}`}
-            >
-              <p className="font-semibold text-ink">
-                無料プラン{!isPremium && "（現在）"}
-              </p>
-              <ul className="mt-1.5 space-y-1 leading-relaxed text-ink">
-                <li>
-                  町丁目の詳細を1日<strong className="font-bold">20</strong>
-                  回まで見られます
-                </li>
-              </ul>
-            </div>
-            <div
-              className={`rounded-2xl p-3 ${isPremium ? "bg-aqua-50" : "bg-line/40"}`}
-            >
-              <p className="font-semibold text-ink">
-                プレミアムプラン{isPremium && "（現在）"}
-              </p>
-              <ul className="mt-1.5 space-y-1 leading-relaxed text-ink">
-                <li>
-                  町丁目の詳細を<strong className="font-bold">無制限</strong>
-                  に見られます
-                </li>
-              </ul>
-            </div>
+          <div
+            className={`mt-4 rounded-2xl p-3 text-[12px] ${!isPremium ? "bg-aqua-50" : "bg-line/40"}`}
+          >
+            <p className="font-semibold text-ink">
+              無料プラン{!isPremium && "（現在）"}
+            </p>
+            <ul className="mt-1.5 space-y-1 leading-relaxed text-ink">
+              <li>
+                町丁目の詳細を1日<strong className="font-bold">20</strong>
+                回まで見られます
+              </li>
+            </ul>
           </div>
 
           <div className="mt-4">
             <SubscriptionSection
               isPremium={isPremium}
               currentPeriodEnd={currentPeriodEnd}
+              price={price}
             />
           </div>
 

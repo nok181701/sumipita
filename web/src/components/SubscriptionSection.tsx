@@ -2,13 +2,15 @@
 
 import { useState } from "react";
 import { openBillingPortal, startCheckout } from "@/app/actions/subscription";
+import type { PriceInfo } from "@/server/subscription";
 
 type Props = {
   isPremium: boolean;
   currentPeriodEnd: string | null;
+  price?: PriceInfo | null;
 };
 
-export default function SubscriptionSection({ isPremium, currentPeriodEnd }: Props) {
+export default function SubscriptionSection({ isPremium, currentPeriodEnd, price }: Props) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -24,7 +26,7 @@ export default function SubscriptionSection({ isPremium, currentPeriodEnd }: Pro
   };
 
   return (
-    <div className="rounded-card border border-line bg-white p-5 shadow-card">
+    <div className="rounded-card border border-amber-200 bg-amber-50 p-5 shadow-card">
       <p className="text-[13px] font-semibold text-ink">プレミアムプラン</p>
 
       {isPremium ? (
@@ -47,6 +49,16 @@ export default function SubscriptionSection({ isPremium, currentPeriodEnd }: Pro
           <p className="mt-1.5 text-[12px] leading-relaxed text-muted">
             プレミアムプランに登録すると、町丁目詳細の閲覧が無制限になります。
           </p>
+          {price && (
+            <p className="mt-2 text-[15px] font-bold text-ink">
+              {price.amountLabel}
+              {price.intervalLabel && (
+                <span className="text-[12px] font-medium text-muted">
+                  /{price.intervalLabel}（税込）
+                </span>
+              )}
+            </p>
+          )}
           <button
             onClick={() => handle(startCheckout)}
             disabled={loading}

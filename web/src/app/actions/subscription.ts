@@ -2,7 +2,12 @@
 
 import { headers } from "next/headers";
 import { auth } from "@/auth";
-import { createBillingPortalSession, createCheckoutSession } from "@/server/subscription";
+import {
+  createBillingPortalSession,
+  createCheckoutSession,
+  getPriceInfo,
+  type PriceInfo,
+} from "@/server/subscription";
 
 async function requireUser(): Promise<{ userId: string; email: string }> {
   const session = await auth();
@@ -28,4 +33,8 @@ export async function startCheckout(): Promise<string> {
 export async function openBillingPortal(): Promise<string> {
   const { userId } = await requireUser();
   return createBillingPortalSession(userId, await baseUrl());
+}
+
+export async function getPlanPrice(): Promise<PriceInfo> {
+  return getPriceInfo();
 }

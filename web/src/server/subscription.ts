@@ -44,6 +44,38 @@ export function isPremiumStatus(status: string | null | undefined): boolean {
   return status === "active" || status === "trialing";
 }
 
+const INTERVAL_LABEL: Record<string, string> = {
+  day: "日",
+  week: "週",
+  month: "月",
+  year: "年",
+};
+
+export type PriceInfo = {
+  amountLabel: string;
+  intervalLabel: string;
+};
+
+/**
+ * 登録前に金額を表示するため、StripeのPriceを都度取得する。単一プラン・単一Price前提。
+ * 金額は円のみ想定（Stripeの円は補助単位なしの整数なので100で割らない）。
+ */
+export async function getPriceInfo(): Promise<PriceInfo> {
+  const stripe = await stripeClient();
+  const { env } = await getCloudflareContext({ async: true });
+  const price = await stripe.prices.retrieve(env.STRIPE_PRICE_ID);
+  const amount = price.unit_amount ?? 0;
+  const amountLabel = new Intl.NumberFormat("ja-JP", {
+    style: "currency",
+    currency: price.currency,
+    minimumFractionDigits: 0,
+  }).format(amount);
+  const intervalLabel = price.recurring
+    ? (INTERVAL_LABEL[price.recurring.interval] ?? price.recurring.interval)
+    : "";
+  return { amountLabel, intervalLabel };
+}
+
 export async function isPremium(userId: string): Promise<boolean> {
   const row = await getSubscription(userId);
   return isPremiumStatus(row?.status);
